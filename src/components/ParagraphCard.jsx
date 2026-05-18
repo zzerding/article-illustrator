@@ -55,7 +55,14 @@ const ParagraphCard = ({ paragraph, index, onIllustrate, onDelete }) => {
         {isGenerating && (
           <div className="aspect-[16/9] bg-slate-100 rounded-xl flex flex-col items-center justify-center gap-3 animate-pulse">
             <Loader2 className="w-6 h-6 text-primary animate-spin" />
-            <span className="text-xs font-bold text-primary tracking-widest uppercase">{t('common.generating_status')}</span>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-primary tracking-widest uppercase">{t('common.generating_status')}</span>
+              <div className="flex items-center gap-2 text-[8px] font-bold text-primary/40 uppercase tracking-wider">
+                <span>{localStorage.getItem('pollen_text_model') || '...'}</span>
+                <span>→</span>
+                <span>{localStorage.getItem('pollen_image_model') || '...'}</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -97,9 +104,17 @@ const ParagraphCard = ({ paragraph, index, onIllustrate, onDelete }) => {
             </div>
             
             {paragraph.prompt && (
-               <p className="text-[10px] text-text/30 line-clamp-1 italic hover:line-clamp-none transition-all cursor-help" title={paragraph.prompt}>
-                 Prompt: {paragraph.prompt}
-               </p>
+               <div className="flex flex-col gap-1 mt-1">
+                 <p className="text-[10px] text-text/30 line-clamp-1 italic hover:line-clamp-none transition-all cursor-help" title={paragraph.prompt}>
+                   Prompt: {paragraph.prompt}
+                 </p>
+                 {(paragraph.textModel || paragraph.imageModel) && (
+                   <div className="flex items-center gap-2 text-[8px] font-bold text-text/20 uppercase tracking-wider">
+                     {paragraph.textModel && <span title="Text Model">T: {paragraph.textModel}</span>}
+                     {paragraph.imageModel && <span title="Image Model">I: {paragraph.imageModel}</span>}
+                   </div>
+                 )}
+               </div>
             )}
           </div>
         )}

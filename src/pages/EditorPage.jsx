@@ -1,9 +1,70 @@
-import React, { useState } from 'react';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { AlertCircle } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
 import { useAuth } from '../context/AuthContext';
 import { CONFIG, STYLE_PROMPTS } from '../config';
 import { useTranslation } from 'react-i18next';
+
+const POLLINATIONS_SAFE_FILTERS = 'privacy,secrets';
+
+const textFromChatContent = (content) => {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((block) => {
+        if (typeof block === 'string') {
+          return block;
+        }
+
+        if (!block || typeof block !== 'object') {
+          return '';
+        }
+
+        if (typeof block.text === 'string') {
+          return block.text;
+        }
+
+        if (typeof block.content === 'string') {
+          return block.content;
+        }
+
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  return '';
+};
+
+const extractPromptFromChatCompletion = (data) => {
+  const choice = data?.choices?.[0];
+  const message = choice?.message;
+  const prompt = [
+    textFromChatContent(message?.content),
+    textFromChatContent(message?.content_blocks),
+    textFromChatContent(choice?.text),
+    textFromChatContent(data?.content),
+  ].find((candidate) => candidate.trim());
+
+  if (!prompt) {
+    throw new Error('FAILED_PROMPT_GENERATION');
+  }
+
+  let cleanedPrompt = prompt.trim().replace(/^["']|["']$/g, '');
+  if (cleanedPrompt.toLowerCase().startsWith('prompt:')) {
+    cleanedPrompt = cleanedPrompt.slice(7).trim();
+  }
+
+  if (!cleanedPrompt) {
+    throw new Error('FAILED_PROMPT_GENERATION');
+  }
+
+  return cleanedPrompt;
+};
 
 const EditorPage = () => {
   const { apiKey, logout } = useAuth();
@@ -16,7 +77,7 @@ const EditorPage = () => {
   const handleParse = () => {
     if (!articleText.trim()) return;
     setIsProcessing(true);
-    
+
     // Split text into paragraphs as per design spec
     const rawParagraphs = articleText
       .split(/\n{2,}/)
@@ -39,12 +100,15 @@ const EditorPage = () => {
 
   const generateImagePrompt = async (paragraphText, style) => {
     const styleHint = STYLE_PROMPTS[style] ? `Style: ${STYLE_PROMPTS[style]}.` : '';
+    const selectedTextModel = localStorage.getItem('pollen_text_model') || CONFIG.DEFAULT_TEXT_MODEL;
+    const selectedImageModel = localStorage.getItem('pollen_image_model') || CONFIG.DEFAULT_IMAGE_MODEL;
+
     const userMessage = `
 Convert the following article paragraph into an image generation prompt.
 Requirements:
 - English only, max 60 words
 - No real person names or copyrighted characters
-- Vivid, visual description suitable for Flux image model
+- Vivid, visual description suitable for ${selectedImageModel} image model
 - ${styleHint}
 
 Paragraph:
@@ -53,16 +117,19 @@ Paragraph:
 Output ONLY the prompt, no explanation.
     `.trim();
 
-    const res = await fetch(CONFIG.TEXT_API, {
+    const res = await fetch(CONFIG.CHAT_COMPLETIONS_API, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai',
+        model: selectedTextModel,
         messages: [{ role: 'user', content: userMessage }],
-        max_tokens: 120,
+        max_tokens: 150,
+        response_format: { type: 'text' },
+        // Pollinations documents safe as comma-separated filter names.
+        safe: POLLINATIONS_SAFE_FILTERS,
       }),
     });
 
@@ -73,12 +140,22 @@ Output ONLY the prompt, no explanation.
     if (res.status === 402) {
       throw new Error('INSUFFICIENT_POLLEN');
     }
+    if (res.status === 403) {
+      throw new Error('FORBIDDEN');
+    }
+
+    if (!res.ok) {
+      throw new Error('FAILED_PROMPT_GENERATION');
+    }
 
     const data = await res.json();
-    return data.choices[0].message.content.trim();
+    return extractPromptFromChatCompletion(data);
   };
 
   const illustrateParagraph = async (id, style) => {
+    const selectedTextModel = localStorage.getItem('pollen_text_model') || CONFIG.DEFAULT_TEXT_MODEL;
+    const selectedImageModel = localStorage.getItem('pollen_image_model') || CONFIG.DEFAULT_IMAGE_MODEL;
+
     setParagraphs(prev => prev.map(p =>
       p.id === id ? { ...p, status: 'generating', style } : p
     ));
@@ -87,21 +164,62 @@ Output ONLY the prompt, no explanation.
       const p = paragraphs.find(p => p.id === id);
       const textToProcess = p ? p.text : '';
       const prompt = await generateImagePrompt(textToProcess, style);
-      
-      const encoded = encodeURIComponent(prompt);
-      const imageUrl = `${CONFIG.IMAGE_API}/${encoded}?model=flux&width=1024&height=576&nologo=true&token=${apiKey}`;
+
+      const res = await fetch(CONFIG.IMAGE_GENERATIONS_API, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          model: selectedImageModel,
+          size: '1024x576',
+          response_format: 'url'
+        })
+      });
+
+      if (res.status === 401) {
+        logout();
+        throw new Error('UNAUTHORIZED');
+      }
+      if (res.status === 402) {
+        throw new Error('INSUFFICIENT_POLLEN');
+      }
+      if (res.status === 403) {
+        throw new Error('FORBIDDEN');
+      }
+      if (!res.ok) {
+        throw new Error('FAILED_IMAGE_GENERATION');
+      }
+
+      const data = await res.json();
+      // Pollinations API returns { data: [{ url: '...' }] }
+      const imageUrl = data.data?.[0]?.url || data[0]?.url;
+
+      if (!imageUrl) throw new Error('NO_IMAGE_URL');
 
       setParagraphs(prev => prev.map(p =>
-        p.id === id ? { ...p, status: 'completed', imageUrl, prompt, style } : p
+        p.id === id ? {
+          ...p,
+          status: 'completed',
+          imageUrl,
+          prompt,
+          style,
+          textModel: selectedTextModel,
+          imageModel: selectedImageModel
+        } : p
       ));
     } catch (e) {
       console.error('Generation failed', e);
       if (e.message === 'INSUFFICIENT_POLLEN') {
         setError(t('common.error_insufficient_pollen'));
+      } else if (e.message === 'FORBIDDEN') {
+        setError(t('common.error_forbidden'));
       } else if (e.message !== 'UNAUTHORIZED') {
         setError(t('common.error_failed_generation'));
       }
-      
+
       setParagraphs(prev => prev.map(p =>
         p.id === id ? { ...p, status: 'error' } : p
       ));

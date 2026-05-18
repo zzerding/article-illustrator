@@ -6,11 +6,18 @@ export const CONFIG = {
   // For local development, use 'http://localhost:5173'
   REDIRECT_URI: window.location.origin,
 
-  // Pollinations API endpoints
+  // Pollinations API base and endpoints
+  API_BASE_URL: "https://gen.pollinations.ai",
   AUTH_URL: "https://enter.pollinations.ai/authorize",
-  TEXT_API: "https://text.pollinations.ai/openai",
-  IMAGE_API: "https://image.pollinations.ai/prompt",
-  USERINFO_API: "https://enter.pollinations.ai/api/device/userinfo",
+  PROFILE_API: "https://gen.pollinations.ai/account/profile",
+  BALANCE_API: "https://gen.pollinations.ai/account/balance",
+  MODELS_API: "https://gen.pollinations.ai/v1/models",
+  CHAT_COMPLETIONS_API: "https://gen.pollinations.ai/v1/chat/completions",
+  IMAGE_GENERATIONS_API: "https://gen.pollinations.ai/v1/images/generations",
+
+  // Default models
+  DEFAULT_TEXT_MODEL: "openai-fast",
+  DEFAULT_IMAGE_MODEL: "flux",
 };
 
 export const STYLE_PROMPTS = {

@@ -10,6 +10,7 @@
     "logout": "Logout",
     "recharge": "Please recharge at pollinations.ai",
     "error_insufficient_pollen": "Insufficient Pollen balance. Please recharge at pollinations.ai",
+    "error_forbidden": "Access denied or model unavailable for your account tier.",
     "error_failed_generation": "Failed to generate illustration. Please try again.",
     "loading": "Processing...",
     "retry": "Click to retry",
@@ -23,7 +24,10 @@
     "empty_state": "Start parsing your article, AI will bring you inspiration.",
     "placeholder": "Paste your article here...",
     "parse_button": "Parse Paragraphs",
-    "generating_status": "Generating..."
+    "generating_status": "Generating...",
+    "settings": "Settings",
+    "text_model": "Text Model",
+    "image_model": "Image Model"
   },
   "styles": {
     "photo": "Photorealistic",

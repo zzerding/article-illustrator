@@ -8,7 +8,9 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [apiKey, setApiKey] = useState(sessionStorage.getItem('pollen_key'));
   const [user, setUser] = useState(null);
+  const [balance, setBalance] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accountError, setAccountError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -28,14 +30,14 @@ export const AuthProvider = ({ children }) => {
         sessionStorage.setItem('pollen_key', keyFromHash);
         setApiKey(keyFromHash);
         window.history.replaceState(null, '', window.location.pathname);
-        // fetchUserInfo will be called by the next useEffect run triggered by setApiKey
+        // fetchAccountData will be called by the next useEffect run triggered by setApiKey
         return;
-      } 
-      
-      if (apiKey && !user) {
-        await fetchUserInfo(apiKey);
       }
-      
+
+      if (apiKey && !user) {
+        await fetchAccountData(apiKey);
+      }
+
       if (isMounted) setIsLoading(false);
     };
 
@@ -44,19 +46,41 @@ export const AuthProvider = ({ children }) => {
     return () => { isMounted = false; };
   }, [apiKey, user]);
 
-  const fetchUserInfo = async (key) => {
+  const fetchAccountData = async (key) => {
+    setAccountError(null);
     try {
-      const res = await fetch(CONFIG.USERINFO_API, {
+      // 1. Fetch Profile
+      const profileRes = await fetch(CONFIG.PROFILE_API, {
         headers: { 'Authorization': `Bearer ${key}` }
       });
-      if (res.status === 401) {
+
+      if (profileRes.status === 401) {
         logout();
         return;
       }
-      const data = await res.json();
-      setUser(data);
+
+      if (!profileRes.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      const profileData = await profileRes.json();
+      setUser(profileData);
+
+      // 2. Fetch Balance (Optional, don't block if fails)
+      try {
+        const balanceRes = await fetch(CONFIG.BALANCE_API, {
+          headers: { 'Authorization': `Bearer ${key}` }
+        });
+        if (balanceRes.ok) {
+          const balanceData = await balanceRes.json();
+          setBalance(balanceData);
+        }
+      } catch (e) {
+        console.warn('Balance fetch failed', e);
+      }
     } catch (e) {
-      console.warn('UserInfo fetch failed', e);
+      console.warn('Account data fetch failed', e);
+      setAccountError(e.message);
     }
   };
 
@@ -75,10 +99,11 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('pollen_key');
     setApiKey(null);
     setUser(null);
+    setBalance(null);
   };
 
   return (
-    <AuthContext.Provider value={{ apiKey, user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ apiKey, user, balance, login, logout, isLoading, accountError }}>
       {children}
     </AuthContext.Provider>
   );
