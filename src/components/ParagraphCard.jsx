@@ -1,4 +1,4 @@
-import { Download, RotateCcw, Trash2, Loader2, Send, Edit3, Image as ImageIcon } from 'lucide-react';
+import { Download, RotateCcw, Trash2, Loader2, Send, Edit3, Image as ImageIcon, Maximize2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import StyleSelector from './StyleSelector';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,7 @@ const getDownloadExtension = (contentType) => {
   return 'png';
 };
 
-const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, onDelete }) => {
+const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, onDelete, onPreview }) => {
   const { t } = useTranslation();
   const [editedPrompt, setEditedPrompt] = useState(paragraph.prompt || '');
 
@@ -182,15 +182,31 @@ const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, on
             {/* Completed Image */}
             {isCompleted && (
               <div className="flex flex-col gap-4 group/img animate-in fade-in duration-500">
-                <div className="relative aspect-[16/9] rounded-2xl overflow-hidden shadow-xl shadow-slate-200 group-hover:shadow-2xl group-hover:shadow-primary/10 transition-all duration-500 ring-1 ring-black/5">
+                <div
+                  className="relative aspect-[16/9] rounded-2xl overflow-hidden shadow-xl shadow-slate-200 group-hover:shadow-2xl group-hover:shadow-primary/10 transition-all duration-500 ring-1 ring-black/5 cursor-zoom-in"
+                  onClick={onPreview}
+                >
                   <img
                     src={paragraph.imageUrl}
                     alt="Generated illustration"
                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4 gap-2">
                     <button
-                      onClick={handleDownload}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPreview();
+                      }}
+                      className="p-3 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white hover:text-primary transition-all shadow-lg"
+                      title={t('common.preview')}
+                    >
+                      <Maximize2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload();
+                      }}
                       className="p-3 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white hover:text-primary transition-all shadow-lg"
                       title={t('common.download')}
                     >

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, HelpCircle, Sparkles, Wand2, Loader2 } from 'lucide-react';
+import { AlertCircle, HelpCircle, Sparkles, Wand2, Loader2, X, Download } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
 import { useAuth } from '../context/AuthContext';
 import { CONFIG, STORAGE_KEYS, STYLE_PROMPTS } from '../config';
@@ -9,6 +9,12 @@ import { useTranslation } from 'react-i18next';
 const MAX_PARAGRAPH_COUNT = 50;
 const PROMPT_GENERATION_MAX_TOKENS = 800;
 const PROMPT_REASONING_EFFORT = 'minimal';
+
+const getDownloadExtension = (contentType) => {
+  if (contentType?.includes('jpeg') || contentType?.includes('jpg')) return 'jpg';
+  if (contentType?.includes('webp')) return 'webp';
+  return 'png';
+};
 
 const isBlobUrl = (url) => typeof url === 'string' && url.startsWith('blob:');
 
@@ -238,6 +244,19 @@ const EditorPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [error, setError] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  useEffect(() => {
+    if (previewImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [previewImage]);
+
   const illustrationCountNumber = Number.isFinite(Number(illustrationCount))
     ? Number(illustrationCount)
     : 1;
@@ -566,6 +585,7 @@ Output ONLY the prompt, no explanation.
                     onGeneratePrompt={(style) => generatePromptForParagraph(p.id, style)}
                     onGenerateImage={(customPrompt) => generateImageForParagraph(p.id, customPrompt)}
                     onDelete={() => handleDelete(p.id)}
+                    onPreview={() => setPreviewImage(p)}
                   />
                 ))}
               </div>
@@ -583,6 +603,67 @@ Output ONLY the prompt, no explanation.
           )}
         </div>
       </div>
+
+      {/* Large Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-text/90 backdrop-blur-md animate-in fade-in duration-300">
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all z-[60]"
+            title={t('common.close')}
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div
+            className="absolute inset-0"
+            onClick={() => setPreviewImage(null)}
+          />
+
+          <div className="relative max-w-5xl w-full max-h-full flex flex-col gap-6 animate-in zoom-in-95 duration-300 pointer-events-none">
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 pointer-events-auto">
+              <img
+                src={previewImage.imageUrl}
+                alt="Large preview"
+                className="w-full h-auto max-h-[80vh] object-contain mx-auto"
+              />
+            </div>
+
+            <div className="flex items-center justify-between px-4 pointer-events-auto">
+              <div className="flex flex-col gap-1">
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">
+                  {previewImage.imageModel} · {previewImage.imageWidth}x{previewImage.imageHeight}
+                </p>
+                <p className="text-sm text-white/80 line-clamp-1 max-w-2xl italic font-serif">
+                  "{previewImage.prompt}"
+                </p>
+              </div>
+
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(previewImage.imageUrl);
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    const index = paragraphs.findIndex(p => p.id === previewImage.id);
+                    link.download = `illustration-${index + 1}.${getDownloadExtension(previewImage.imageContentType || blob.type)}`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  } catch {
+                    window.open(previewImage.imageUrl, '_blank');
+                  }
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-white text-primary rounded-xl font-bold text-sm hover:bg-white/90 transition-all shadow-xl"
+              >
+                <Download className="w-4 h-4" />
+                {t('common.download')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
