@@ -1,12 +1,15 @@
-import React from 'react';
 import { User, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import ModelSettings from '../components/ModelSettings';
 
 const MainLayout = ({ children }) => {
-  const { user, balance, logout, apiKey } = useAuth();
+  const { user, balance, usageSummary, logout, apiKey } = useAuth();
   const { t, i18n } = useTranslation();
+  const displayName = user?.name || user?.githubUsername || user?.email || 'User';
+  const secondaryName = user?.email && user.email !== displayName ? user.email : user?.githubUsername;
+  const usageRequests = usageSummary?.requests || 0;
+  const usageCostUsd = usageSummary?.costUsd || 0;
 
   const toggleLanguage = () => {
     const nextLng = i18n.language.startsWith('zh') ? 'en' : 'zh';
@@ -49,12 +52,23 @@ const MainLayout = ({ children }) => {
                     {balance.balance} Pollen
                   </a>
                 )}
+                {usageRequests > 0 && (
+                  <span
+                    className="text-[10px] font-medium text-text/40"
+                    title={t('common.usage_90d_title')}
+                  >
+                    {t('common.usage_90d', {
+                      requests: usageRequests.toLocaleString(),
+                      cost: usageCostUsd.toFixed(2)
+                    })}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-text/5 bg-slate-50">
                   {user?.image ? (
-                    <img src={user.image} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={user.image} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <User className="w-4 h-4 text-text/20" />
@@ -63,8 +77,13 @@ const MainLayout = ({ children }) => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-text hidden sm:block leading-none">
-                    {user?.githubUsername || 'User'}
+                    {displayName}
                   </span>
+                  {secondaryName && (
+                    <span className="text-[10px] text-text/35 hidden sm:block leading-tight max-w-[10rem] truncate">
+                      {secondaryName}
+                    </span>
+                  )}
                   <button
                     onClick={logout}
                     className="text-[9px] font-bold text-text/30 hover:text-red-400 uppercase tracking-widest transition-colors text-left"

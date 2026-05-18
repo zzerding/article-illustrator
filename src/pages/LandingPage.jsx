@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';

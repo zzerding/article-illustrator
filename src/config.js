@@ -11,14 +11,37 @@ export const CONFIG = {
   AUTH_URL: "https://enter.pollinations.ai/authorize",
   PROFILE_API: "https://gen.pollinations.ai/account/profile",
   BALANCE_API: "https://gen.pollinations.ai/account/balance",
+  USAGE_DAILY_API: "https://gen.pollinations.ai/account/usage/daily?format=json&days=90&granularity=day&period=&api_key_ids=",
   MODELS_API: "https://gen.pollinations.ai/v1/models",
   CHAT_COMPLETIONS_API: "https://gen.pollinations.ai/v1/chat/completions",
   IMAGE_GENERATIONS_API: "https://gen.pollinations.ai/v1/images/generations",
+  IMAGE_GENERATE_API: "https://gen.pollinations.ai/image",
+  IMAGE_MODELS_API: "https://gen.pollinations.ai/image/models",
+  MEDIA_UPLOAD_API: "https://media.pollinations.ai/upload",
 
   // Default models
   DEFAULT_TEXT_MODEL: "openai-fast",
-  DEFAULT_IMAGE_MODEL: "flux",
+  DEFAULT_IMAGE_MODEL: "zimage",
 };
+
+export const STORAGE_KEYS = {
+  TEXT_MODEL: "pollen_text_model",
+  IMAGE_MODEL: "pollen_image_model",
+  IMAGE_WIDTH: "pollen_image_width",
+  IMAGE_HEIGHT: "pollen_image_height",
+  IMAGE_SEED: "pollen_image_seed",
+  IMAGE_ENHANCE: "pollen_image_enhance",
+  REFERENCE_IMAGE: "pollen_reference_image",
+};
+
+export const IMAGE_GENERATION_DEFAULTS = {
+  width: 1024,
+  height: 576,
+  seed: -1,
+  enhance: false,
+};
+
+export const MAX_REFERENCE_IMAGE_BYTES = 50 * 1024 * 1024;
 
 export const STYLE_PROMPTS = {
   photo:

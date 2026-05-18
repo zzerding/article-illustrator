@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
 import { useAuth } from '../context/AuthContext';
-import { CONFIG, STYLE_PROMPTS } from '../config';
+import { CONFIG, STORAGE_KEYS, STYLE_PROMPTS } from '../config';
+import { readImageGenerationSettings } from '../imageSettings';
 import { useTranslation } from 'react-i18next';
 
-const POLLINATIONS_SAFE_FILTERS = 'privacy,secrets';
 const MAX_PARAGRAPH_COUNT = 50;
+const PROMPT_GENERATION_MAX_TOKENS = 800;
+const PROMPT_REASONING_EFFORT = 'minimal';
+
+const isBlobUrl = (url) => typeof url === 'string' && url.startsWith('blob:');
 
 const normalizeText = (text) => text.replace(/\r\n/g, '\n').trim();
 
@@ -151,6 +155,13 @@ const textFromChatContent = (content) => {
   return '';
 };
 
+const isPromptGenerationLengthLimited = (data, choice) => {
+  const reasoningTokens = Number(data?.usage?.completion_tokens_details?.reasoning_tokens);
+
+  return choice?.finish_reason === 'length' ||
+    (Number.isFinite(reasoningTokens) && reasoningTokens >= PROMPT_GENERATION_MAX_TOKENS);
+};
+
 const extractPromptFromChatCompletion = (data) => {
   const choice = data?.choices?.[0];
   const message = choice?.message;
@@ -162,6 +173,9 @@ const extractPromptFromChatCompletion = (data) => {
   ].find((candidate) => candidate.trim());
 
   if (!prompt) {
+    if (isPromptGenerationLengthLimited(data, choice)) {
+      throw new Error('PROMPT_GENERATION_LENGTH_LIMIT');
+    }
     throw new Error('FAILED_PROMPT_GENERATION');
   }
 
@@ -177,9 +191,25 @@ const extractPromptFromChatCompletion = (data) => {
   return cleanedPrompt;
 };
 
+const buildImageGenerationUrl = (prompt, settings) => {
+  const url = new URL(`${CONFIG.IMAGE_GENERATE_API}/${encodeURIComponent(prompt)}`);
+  url.searchParams.set('model', settings.model);
+  url.searchParams.set('width', String(settings.width));
+  url.searchParams.set('height', String(settings.height));
+  url.searchParams.set('seed', String(settings.seed));
+  url.searchParams.set('enhance', String(settings.enhance));
+
+  if (settings.referenceImage?.url) {
+    url.searchParams.set('image', settings.referenceImage.url);
+  }
+
+  return url.toString();
+};
+
 const EditorPage = () => {
   const { apiKey, logout } = useAuth();
   const { t } = useTranslation();
+  const activeBlobUrlsRef = useRef(new Set());
   const [articleText, setArticleText] = useState('');
   const [illustrationCount, setIllustrationCount] = useState('3');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -189,6 +219,29 @@ const EditorPage = () => {
     ? Number(illustrationCount)
     : 1;
   const sanitizedIllustrationCount = Math.max(1, Math.floor(illustrationCountNumber));
+
+  useEffect(() => {
+    const currentBlobUrls = new Set(
+      paragraphs
+        .map((paragraph) => paragraph.imageUrl)
+        .filter(isBlobUrl)
+    );
+
+    activeBlobUrlsRef.current.forEach((url) => {
+      if (!currentBlobUrls.has(url)) {
+        URL.revokeObjectURL(url);
+      }
+    });
+
+    activeBlobUrlsRef.current = currentBlobUrls;
+  }, [paragraphs]);
+
+  useEffect(() => {
+    return () => {
+      activeBlobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      activeBlobUrlsRef.current.clear();
+    };
+  }, []);
 
   const handleParse = () => {
     if (!articleText.trim()) return;
@@ -211,10 +264,10 @@ const EditorPage = () => {
     setIsProcessing(false);
   };
 
-  const generateImagePrompt = async (paragraphText, style) => {
+  const generateImagePrompt = async (paragraphText, style, imageModel) => {
     const styleHint = STYLE_PROMPTS[style] ? `Style: ${STYLE_PROMPTS[style]}.` : '';
-    const selectedTextModel = localStorage.getItem('pollen_text_model') || CONFIG.DEFAULT_TEXT_MODEL;
-    const selectedImageModel = localStorage.getItem('pollen_image_model') || CONFIG.DEFAULT_IMAGE_MODEL;
+    const selectedTextModel = localStorage.getItem(STORAGE_KEYS.TEXT_MODEL) || CONFIG.DEFAULT_TEXT_MODEL;
+    const selectedImageModel = imageModel || readImageGenerationSettings().model;
 
     const userMessage = `
 Convert the following article paragraph into an image generation prompt.
@@ -239,10 +292,10 @@ Output ONLY the prompt, no explanation.
       body: JSON.stringify({
         model: selectedTextModel,
         messages: [{ role: 'user', content: userMessage }],
-        max_tokens: 150,
+        max_tokens: PROMPT_GENERATION_MAX_TOKENS,
+        reasoning_effort: PROMPT_REASONING_EFFORT,
+        // Intentionally avoid `safe` here; that filter can cause false-positive refusals for prompt generation.
         response_format: { type: 'text' },
-        // Pollinations documents safe as comma-separated filter names.
-        safe: POLLINATIONS_SAFE_FILTERS,
       }),
     });
 
@@ -266,30 +319,24 @@ Output ONLY the prompt, no explanation.
   };
 
   const illustrateParagraph = async (id, style) => {
-    const selectedTextModel = localStorage.getItem('pollen_text_model') || CONFIG.DEFAULT_TEXT_MODEL;
-    const selectedImageModel = localStorage.getItem('pollen_image_model') || CONFIG.DEFAULT_IMAGE_MODEL;
+    const targetParagraph = paragraphs.find(p => p.id === id);
+    if (!targetParagraph) return;
+
+    const selectedTextModel = localStorage.getItem(STORAGE_KEYS.TEXT_MODEL) || CONFIG.DEFAULT_TEXT_MODEL;
+    const imageSettings = readImageGenerationSettings();
 
     setParagraphs(prev => prev.map(p =>
       p.id === id ? { ...p, status: 'generating', style } : p
     ));
 
     try {
-      const p = paragraphs.find(p => p.id === id);
-      const textToProcess = p ? p.text : '';
-      const prompt = await generateImagePrompt(textToProcess, style);
+      const prompt = await generateImagePrompt(targetParagraph.text, style, imageSettings.model);
+      const imageRequestUrl = buildImageGenerationUrl(prompt, imageSettings);
 
-      const res = await fetch(CONFIG.IMAGE_GENERATIONS_API, {
-        method: 'POST',
+      const res = await fetch(imageRequestUrl, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt,
-          model: selectedImageModel,
-          size: '1024x576',
-          response_format: 'url'
-        })
       });
 
       if (res.status === 401) {
@@ -302,15 +349,19 @@ Output ONLY the prompt, no explanation.
       if (res.status === 403) {
         throw new Error('FORBIDDEN');
       }
+      if (res.status === 413) {
+        throw new Error('FILE_TOO_LARGE');
+      }
       if (!res.ok) {
         throw new Error('FAILED_IMAGE_GENERATION');
       }
 
-      const data = await res.json();
-      // Pollinations API returns { data: [{ url: '...' }] }
-      const imageUrl = data.data?.[0]?.url || data[0]?.url;
+      const imageBlob = await res.blob();
+      if (imageBlob.type && !imageBlob.type.startsWith('image/')) {
+        throw new Error('FAILED_IMAGE_GENERATION');
+      }
 
-      if (!imageUrl) throw new Error('NO_IMAGE_URL');
+      const imageUrl = URL.createObjectURL(imageBlob);
 
       setParagraphs(prev => prev.map(p =>
         p.id === id ? {
@@ -320,7 +371,13 @@ Output ONLY the prompt, no explanation.
           prompt,
           style,
           textModel: selectedTextModel,
-          imageModel: selectedImageModel
+          imageModel: imageSettings.model,
+          imageWidth: imageSettings.width,
+          imageHeight: imageSettings.height,
+          imageSeed: imageSettings.seed,
+          imageEnhance: imageSettings.enhance,
+          referenceImageUrl: imageSettings.referenceImage?.url || null,
+          imageContentType: imageBlob.type || null
         } : p
       ));
     } catch (e) {
@@ -329,6 +386,10 @@ Output ONLY the prompt, no explanation.
         setError(t('common.error_insufficient_pollen'));
       } else if (e.message === 'FORBIDDEN') {
         setError(t('common.error_forbidden'));
+      } else if (e.message === 'PROMPT_GENERATION_LENGTH_LIMIT') {
+        setError(t('common.error_prompt_length_limit'));
+      } else if (e.message === 'FILE_TOO_LARGE') {
+        setError(t('common.upload_file_too_large'));
       } else if (e.message !== 'UNAUTHORIZED') {
         setError(t('common.error_failed_generation'));
       }

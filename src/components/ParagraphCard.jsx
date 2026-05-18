@@ -1,7 +1,13 @@
-import React from 'react';
-import { Download, RotateCcw, Trash2, Loader2, ImageIcon } from 'lucide-react';
+import { Download, RotateCcw, Trash2, Loader2 } from 'lucide-react';
 import StyleSelector from './StyleSelector';
 import { useTranslation } from 'react-i18next';
+import { CONFIG, STORAGE_KEYS } from '../config';
+
+const getDownloadExtension = (contentType) => {
+  if (contentType?.includes('jpeg') || contentType?.includes('jpg')) return 'jpg';
+  if (contentType?.includes('webp')) return 'webp';
+  return 'png';
+};
 
 const ParagraphCard = ({ paragraph, index, onIllustrate, onDelete }) => {
   const { t } = useTranslation();
@@ -18,7 +24,7 @@ const ParagraphCard = ({ paragraph, index, onIllustrate, onDelete }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `illustration-${index + 1}.png`;
+      link.download = `illustration-${index + 1}.${getDownloadExtension(paragraph.imageContentType || blob.type)}`;
       link.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -58,9 +64,9 @@ const ParagraphCard = ({ paragraph, index, onIllustrate, onDelete }) => {
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs font-bold text-primary tracking-widest uppercase">{t('common.generating_status')}</span>
               <div className="flex items-center gap-2 text-[8px] font-bold text-primary/40 uppercase tracking-wider">
-                <span>{localStorage.getItem('pollen_text_model') || '...'}</span>
+                <span>{localStorage.getItem(STORAGE_KEYS.TEXT_MODEL) || CONFIG.DEFAULT_TEXT_MODEL}</span>
                 <span>→</span>
-                <span>{localStorage.getItem('pollen_image_model') || '...'}</span>
+                <span>{localStorage.getItem(STORAGE_KEYS.IMAGE_MODEL) || CONFIG.DEFAULT_IMAGE_MODEL}</span>
               </div>
             </div>
           </div>
