@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import ModelSettings from '../components/ModelSettings';
 
-const MainLayout = ({ children }) => {
+const MainLayout = ({ children, onNavigate, currentView }) => {
   const { user, balance, usageSummary, logout, apiKey } = useAuth();
   const { t, i18n } = useTranslation();
   const displayName = user?.name || user?.githubUsername || user?.email || 'User';
@@ -19,12 +19,15 @@ const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <header className="py-4 sm:py-6 px-4 sm:px-6 md:px-12 flex items-center justify-between gap-3">
-        <div className="flex items-center min-w-0">
+        <button
+          onClick={() => onNavigate('main')}
+          className="flex items-center min-w-0 hover:opacity-70 transition-opacity"
+        >
           <span className="font-serif text-lg sm:text-2xl font-bold tracking-tight text-text truncate">Article Illustrator</span>
-        </div>
+        </button>
 
         <div className="flex items-center gap-3 sm:gap-6 md:gap-8 shrink-0">
-          <ModelSettings />
+          {currentView !== 'about' && <ModelSettings />}
 
           <button
             onClick={toggleLanguage}
@@ -33,6 +36,13 @@ const MainLayout = ({ children }) => {
           >
             <Languages className="w-4 h-4" />
             <span>{i18n.language.startsWith('zh') ? 'EN' : '中文'}</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('about')}
+            className={`text-sm font-medium transition-opacity ${currentView === 'about' ? 'text-primary' : 'text-text opacity-60 hover:opacity-100'}`}
+          >
+            {t('common.about')}
           </button>
 
           {apiKey && (
@@ -93,11 +103,6 @@ const MainLayout = ({ children }) => {
                 </div>
               </div>
             </div>
-          )}
-          {!apiKey && (
-            <button className="text-sm font-medium text-text opacity-60 hover:opacity-100 transition-opacity">
-              {t('common.about')}
-            </button>
           )}
         </div>
       </header>

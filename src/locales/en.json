@@ -64,5 +64,23 @@
     "painting": "Painting",
     "free": "AI Freestyle",
     "prompt_hint": "Choose a style to generate the image prompt"
+  },
+  "about": {
+    "title": "About Article Illustrator",
+    "subtitle": "Bringing your words to life with AI-powered visuals.",
+    "intro": "Article Illustrator is a tool designed to help writers, bloggers, and content creators quickly generate high-quality illustrations for their articles. By combining advanced text and image AI models, we make it effortless to visualize your ideas.",
+    "how_it_works": {
+      "title": "How It Works",
+      "step1": "Paste your article into the editor.",
+      "step2": "The AI parses your text into logical paragraphs.",
+      "step3": "Select a style and generate a tailored image prompt.",
+      "step4": "Create unique illustrations powered by Pollinations AI."
+    },
+    "privacy_credits": {
+      "title": "Privacy & Credits",
+      "privacy": "We value your privacy. Your article text and generated images are processed in real-time and never stored on our servers. The app uses your own Pollinations Pollen to ensure you have full control over your usage.",
+      "credits": "This project is powered by Pollinations.ai, providing the underlying AI models for both text generation and image synthesis."
+    },
+    "back": "Back to App"
   }
 }

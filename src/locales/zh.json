@@ -64,5 +64,23 @@
     "painting": "油画风",
     "free": "AI 自由发挥",
     "prompt_hint": "选择风格后先生成图片提示词"
+  },
+  "about": {
+    "title": "关于 Article Illustrator",
+    "subtitle": "用 AI 视觉让你的文字跃然纸上。",
+    "intro": "Article Illustrator 是一款专为作者、博主和内容创作者设计的工具，旨在帮助他们快速为文章生成高质量插图。通过结合先进的文本和图像 AI 模型，我们让创意可视化变得轻而易举。",
+    "how_it_works": {
+      "title": "工作原理",
+      "step1": "将文章粘贴到编辑器中。",
+      "step2": "AI 将文本解析为逻辑段落。",
+      "step3": "选择风格并生成定制的图片提示词。",
+      "step4": "使用 Pollinations AI 生成独特的插图。"
+    },
+    "privacy_credits": {
+      "title": "隐私与致谢",
+      "privacy": "我们重视您的隐私。您的文章文本和生成的图像均实时处理，绝不会存储在我们的服务器上。应用使用您自己的 Pollinations Pollen，确保您对用量拥有完全控制权。",
+      "credits": "本项目由 Pollinations.ai 提供支持，为文本生成和图像合成提供底层 AI 模型。"
+    },
+    "back": "返回应用"
   }
 }
