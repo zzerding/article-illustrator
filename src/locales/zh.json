@@ -13,6 +13,7 @@
     "error_forbidden": "访问被拒绝，或者该模型在你的账户等级下不可用。",
     "error_failed_generation": "生成失败，请重试。",
     "error_prompt_length_limit": "文本模型在返回提示词前用完了输出预算，请切换更快的文本模型或重试。",
+    "error_missing_prompt": "请先生成或输入图片提示词。",
     "loading": "正在处理...",
     "retry": "点击重试",
     "paragraph": "段落",
@@ -44,13 +45,24 @@
     "upload_file_too_large": "参考图过大，最大支持 50 MB。",
     "upload_failed": "参考图上传失败，请重试。",
     "usage_90d": "90天 {{requests}} 次 · ${{cost}}",
-    "usage_90d_title": "最近 90 天用量"
+    "usage_90d_title": "最近 90 天用量",
+    "generate_from_prompt": "按提示词生成",
+    "generate_prompt": "生成提示词",
+    "regenerate_prompt": "重新生成提示词",
+    "generate_image": "生成图片",
+    "regenerate_image": "重新生成图片",
+    "generating_prompt_status": "正在生成提示词...",
+    "prompt_ready_status": "提示词已生成",
+    "prompt_placeholder": "生成图片前，可先编辑或输入提示词...",
+    "image_prompt": "图片提示词",
+    "article_text": "文章正文",
+    "segments": "文本分段"
   },
   "styles": {
     "photo": "写实摄影",
     "illustration": "插画风",
     "painting": "油画风",
     "free": "AI 自由发挥",
-    "prompt_hint": "选择风格后将立即生成配图"
+    "prompt_hint": "选择风格后先生成图片提示词"
   }
 }

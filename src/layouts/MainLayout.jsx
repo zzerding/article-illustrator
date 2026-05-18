@@ -18,12 +18,12 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
-      <header className="py-6 px-6 md:px-12 flex items-center justify-between">
-        <div className="flex items-center">
-          <span className="font-serif text-2xl font-bold tracking-tight text-text">Article Illustrator</span>
+      <header className="py-4 sm:py-6 px-4 sm:px-6 md:px-12 flex items-center justify-between gap-3">
+        <div className="flex items-center min-w-0">
+          <span className="font-serif text-lg sm:text-2xl font-bold tracking-tight text-text truncate">Article Illustrator</span>
         </div>
 
-        <div className="flex items-center gap-4 md:gap-8">
+        <div className="flex items-center gap-3 sm:gap-6 md:gap-8 shrink-0">
           <ModelSettings />
 
           <button
@@ -36,8 +36,8 @@ const MainLayout = ({ children }) => {
           </button>
 
           {apiKey && (
-            <div className="flex items-center gap-4 md:gap-6">
-              <div className="flex flex-col items-end hidden sm:flex">
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div className="flex flex-col items-end hidden md:flex">
                 <span className="text-[10px] font-bold text-primary tracking-widest uppercase opacity-70">
                   {user?.tier || 'Free'}
                 </span>
@@ -80,7 +80,7 @@ const MainLayout = ({ children }) => {
                     {displayName}
                   </span>
                   {secondaryName && (
-                    <span className="text-[10px] text-text/35 hidden sm:block leading-tight max-w-[10rem] truncate">
+                    <span className="text-[10px] text-text/35 hidden md:block leading-tight max-w-[10rem] truncate">
                       {secondaryName}
                     </span>
                   )}

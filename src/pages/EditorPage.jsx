@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, HelpCircle, Sparkles, Wand2, Loader2 } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
 import { useAuth } from '../context/AuthContext';
 import { CONFIG, STORAGE_KEYS, STYLE_PROMPTS } from '../config';
@@ -206,6 +206,29 @@ const buildImageGenerationUrl = (prompt, settings) => {
   return url.toString();
 };
 
+const getGenerationErrorMessage = (error, t) => {
+  if (error.message === 'INSUFFICIENT_POLLEN') {
+    return t('common.error_insufficient_pollen');
+  }
+  if (error.message === 'FORBIDDEN') {
+    return t('common.error_forbidden');
+  }
+  if (error.message === 'PROMPT_GENERATION_LENGTH_LIMIT') {
+    return t('common.error_prompt_length_limit');
+  }
+  if (error.message === 'FILE_TOO_LARGE') {
+    return t('common.upload_file_too_large');
+  }
+  if (error.message === 'MISSING_PROMPT') {
+    return t('common.error_missing_prompt');
+  }
+  if (error.message === 'UNAUTHORIZED') {
+    return null;
+  }
+
+  return t('common.error_failed_generation');
+};
+
 const EditorPage = () => {
   const { apiKey, logout } = useAuth();
   const { t } = useTranslation();
@@ -318,7 +341,7 @@ Output ONLY the prompt, no explanation.
     return extractPromptFromChatCompletion(data);
   };
 
-  const illustrateParagraph = async (id, style) => {
+  const generatePromptForParagraph = async (id, style) => {
     const targetParagraph = paragraphs.find(p => p.id === id);
     if (!targetParagraph) return;
 
@@ -326,11 +349,65 @@ Output ONLY the prompt, no explanation.
     const imageSettings = readImageGenerationSettings();
 
     setParagraphs(prev => prev.map(p =>
-      p.id === id ? { ...p, status: 'generating', style } : p
+      p.id === id ? {
+        ...p,
+        status: 'prompting',
+        style,
+        imageUrl: null,
+        prompt: null,
+        textModel: selectedTextModel,
+        imageModel: imageSettings.model
+      } : p
     ));
 
     try {
       const prompt = await generateImagePrompt(targetParagraph.text, style, imageSettings.model);
+
+      setParagraphs(prev => prev.map(p =>
+        p.id === id ? {
+          ...p,
+          status: 'prompted',
+          prompt,
+          style,
+          textModel: selectedTextModel,
+          imageModel: imageSettings.model
+        } : p
+      ));
+    } catch (e) {
+      console.error('Prompt generation failed', e);
+      const message = getGenerationErrorMessage(e, t);
+      if (message) setError(message);
+
+      setParagraphs(prev => prev.map(p =>
+        p.id === id ? { ...p, status: 'error' } : p
+      ));
+    }
+  };
+
+  const generateImageForParagraph = async (id, customPrompt = null) => {
+    const targetParagraph = paragraphs.find(p => p.id === id);
+    if (!targetParagraph) return;
+
+    const prompt = (customPrompt || targetParagraph.prompt || '').trim();
+    if (!prompt) {
+      const error = new Error('MISSING_PROMPT');
+      setError(getGenerationErrorMessage(error, t));
+      return;
+    }
+
+    const imageSettings = readImageGenerationSettings();
+
+    setParagraphs(prev => prev.map(p =>
+      p.id === id ? {
+        ...p,
+        status: 'generating',
+        prompt,
+        imageUrl: null,
+        imageModel: imageSettings.model
+      } : p
+    ));
+
+    try {
       const imageRequestUrl = buildImageGenerationUrl(prompt, imageSettings);
 
       const res = await fetch(imageRequestUrl, {
@@ -369,8 +446,6 @@ Output ONLY the prompt, no explanation.
           status: 'completed',
           imageUrl,
           prompt,
-          style,
-          textModel: selectedTextModel,
           imageModel: imageSettings.model,
           imageWidth: imageSettings.width,
           imageHeight: imageSettings.height,
@@ -381,18 +456,9 @@ Output ONLY the prompt, no explanation.
         } : p
       ));
     } catch (e) {
-      console.error('Generation failed', e);
-      if (e.message === 'INSUFFICIENT_POLLEN') {
-        setError(t('common.error_insufficient_pollen'));
-      } else if (e.message === 'FORBIDDEN') {
-        setError(t('common.error_forbidden'));
-      } else if (e.message === 'PROMPT_GENERATION_LENGTH_LIMIT') {
-        setError(t('common.error_prompt_length_limit'));
-      } else if (e.message === 'FILE_TOO_LARGE') {
-        setError(t('common.upload_file_too_large'));
-      } else if (e.message !== 'UNAUTHORIZED') {
-        setError(t('common.error_failed_generation'));
-      }
+      console.error('Image generation failed', e);
+      const message = getGenerationErrorMessage(e, t);
+      if (message) setError(message);
 
       setParagraphs(prev => prev.map(p =>
         p.id === id ? { ...p, status: 'error' } : p
@@ -405,82 +471,118 @@ Output ONLY the prompt, no explanation.
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 pb-24">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
       {error && (
-        <div className="mb-8 p-4 bg-red-50 text-red-700 rounded-xl flex items-center justify-between">
+        <div className="mb-8 p-4 bg-red-50 text-red-700 rounded-2xl flex items-center justify-between border border-red-100 shadow-sm animate-in slide-in-from-top-4">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5" />
             <p className="text-sm font-medium">{error}</p>
           </div>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">✕</button>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 transition-colors">✕</button>
         </div>
       )}
 
-      {/* Input Section */}
-      <div className="mb-12">
-        <div className="bg-white/50 border border-slate-200 rounded-2xl p-6 focus-within:border-primary/30 transition-colors">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-4">
-            <textarea
-              value={articleText}
-              onChange={(e) => setArticleText(e.target.value)}
-              placeholder={t('common.placeholder')}
-              className="w-full h-48 bg-transparent border-none outline-none resize-none font-sans text-lg text-text leading-relaxed placeholder:text-text/20"
-            />
-            <div className="sm:w-36">
-              <label className="text-[10px] font-bold text-text/40 uppercase tracking-wider">
-                {t('common.illustration_count_label')}
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={MAX_PARAGRAPH_COUNT}
-                value={illustrationCount}
-                onChange={(e) => setIllustrationCount(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white"
-              />
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+        {/* Left Column: Input (Sticky on Desktop) */}
+        <div className="w-full lg:w-5/12 xl:w-4/12">
+          <div className="lg:sticky lg:top-8 flex flex-col gap-6">
+            <div className="bg-white/70 backdrop-blur-md border border-slate-200 rounded-3xl p-6 shadow-xl shadow-slate-200/50 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[10px] font-bold text-text/40 uppercase tracking-[0.2em]">{t('common.article_text')}</h2>
+                  <Sparkles className="w-4 h-4 text-primary/40" />
+                </div>
+
+                <textarea
+                  value={articleText}
+                  onChange={(e) => setArticleText(e.target.value)}
+                  placeholder={t('common.placeholder')}
+                  className="w-full h-[300px] lg:h-[450px] bg-transparent border-none outline-none resize-none font-sans text-base text-text leading-relaxed placeholder:text-text/20 custom-scrollbar"
+                />
+
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="text-[10px] font-bold text-text/40 uppercase tracking-widest block mb-1.5">
+                        {t('common.illustration_count_label')}
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={MAX_PARAGRAPH_COUNT}
+                        value={illustrationCount}
+                        onChange={(e) => setIllustrationCount(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 bg-white transition-all"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleParse}
+                      disabled={isProcessing || !articleText.trim()}
+                      className="mt-5 flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-hover disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95"
+                    >
+                      {isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-4 h-4" />
+                      )}
+                      {isProcessing ? t('common.loading') : t('common.parse_button')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Help/Tip section on desktop */}
+            <div className="hidden lg:flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100">
+              <HelpCircle className="w-5 h-5 text-text/30 shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-bold text-text/60 uppercase tracking-wider">How to use</p>
+                <p className="text-xs text-text/40 leading-relaxed">
+                  Paste your article content, choose how many illustrations you want, and hit parse. We will split the text into logical segments for you to illustrate individually.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex justify-end">
-            <button
-              onClick={handleParse}
-              disabled={isProcessing || !articleText.trim()}
-              className="text-primary font-semibold hover:text-primary-hover transition-colors flex items-center gap-2 group relative"
-            >
-              {isProcessing ? t('common.loading') : t('common.parse_button')}
-              <div className="h-px w-0 group-hover:w-full bg-primary transition-all duration-300 absolute -bottom-1" />
-            </button>
-          </div>
+        </div>
+
+        {/* Right Column: Results (Scrollable) */}
+        <div className="w-full lg:w-7/12 xl:w-8/12">
+          {paragraphs.length > 0 ? (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700">
+              <div className="flex items-center justify-between mb-6 px-2">
+                <h2 className="text-[10px] font-bold text-text/40 uppercase tracking-[0.2em]">{t('common.segments')}</h2>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-text/20 uppercase tracking-widest">
+                  {paragraphs.length} {t('common.segments').toLowerCase()}
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                {paragraphs.map((p, i) => (
+                  <ParagraphCard
+                    key={p.id}
+                    paragraph={p}
+                    index={i}
+                    onGeneratePrompt={(style) => generatePromptForParagraph(p.id, style)}
+                    onGenerateImage={(customPrompt) => generateImageForParagraph(p.id, customPrompt)}
+                    onDelete={() => handleDelete(p.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center py-20 lg:py-0 min-h-[400px]">
+              <div className="p-8 rounded-full bg-slate-50 mb-6 group hover:scale-110 transition-transform duration-500">
+                <Sparkles className="w-12 h-12 text-text/10 group-hover:text-primary/20 transition-colors" />
+              </div>
+              <h3 className="text-xl font-serif italic text-text/40 mb-2">{t('common.empty_state')}</h3>
+              <p className="text-sm text-text/20 max-w-xs text-center leading-relaxed">
+                Paste your text in the left panel to begin your creative journey.
+              </p>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Results Section */}
-      {paragraphs.length > 0 && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="grid grid-cols-12 gap-8 mb-8 pb-4 border-b border-text/5 text-sm font-bold text-text/40 tracking-wider">
-            <div className="col-span-1">{t('common.paragraph')}</div>
-            <div className="col-span-6 lg:col-span-7">{t('common.content')}</div>
-            <div className="col-span-5 lg:col-span-4">{t('common.illustration')}</div>
-          </div>
-
-          <div className="space-y-12">
-            {paragraphs.map((p, i) => (
-              <ParagraphCard
-                key={p.id}
-                paragraph={p}
-                index={i}
-                onIllustrate={(style) => illustrateParagraph(p.id, style)}
-                onDelete={() => handleDelete(p.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {paragraphs.length === 0 && !isProcessing && (
-        <div className="py-32 text-center opacity-20">
-          <p className="text-xl font-serif italic">{t('common.empty_state')}</p>
-        </div>
-      )}
     </div>
   );
 };

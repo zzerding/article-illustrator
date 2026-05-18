@@ -150,6 +150,17 @@ const ModelSettings = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (isOpen && window.innerWidth < 640) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const persistSetting = (key, value) => {
     localStorage.setItem(key, String(value));
     dispatchSettingsChanged();
@@ -273,31 +284,58 @@ const ModelSettings = () => {
     <div className="relative inline-block text-left">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors border border-text/5 bg-white/50 group"
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all border group shadow-sm hover:shadow-md active:scale-95 ${
+          isOpen
+            ? 'bg-primary border-primary text-white'
+            : 'bg-white/80 backdrop-blur-sm border-slate-200 text-text/80 hover:bg-white hover:border-primary/30'
+        }`}
       >
-        <Settings2 className={`w-4 h-4 text-text/40 group-hover:text-primary transition-colors ${isOpen ? 'text-primary' : ''}`} />
-        <span className="text-[10px] font-bold text-text/60 uppercase tracking-widest hidden sm:block">{t('common.settings')}</span>
-        <ChevronDown className={`w-3 h-3 text-text/20 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <Settings2 className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-text/60 group-hover:text-primary'}`} />
+        <span className="text-xs font-bold uppercase tracking-widest">{t('common.settings')}</span>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-text/30 group-hover:text-primary/50'}`} />
       </button>
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-20" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-100 rounded-xl shadow-2xl z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-            <div className="p-4 flex flex-col gap-5 max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Settings Container */}
+          <div className="fixed inset-0 sm:inset-auto sm:absolute sm:top-full sm:right-0 sm:mt-3 sm:w-96 sm:max-h-[calc(100vh-8rem)] bg-white sm:bg-white/95 backdrop-blur-2xl border-0 sm:border sm:border-slate-200/50 sm:rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom sm:slide-in-from-top-2 sm:zoom-in-95 duration-300 sm:origin-top-right ring-1 ring-black/5 flex flex-col">
+
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 sm:p-5 border-b border-slate-100 sm:border-0 shrink-0">
+              <h2 className="text-xl sm:text-base font-serif sm:font-sans font-bold text-text">
+                {t('common.settings')}
+              </h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-3 -mr-3 sm:p-1.5 sm:mr-0 rounded-full hover:bg-slate-100 transition-colors"
+                aria-label={t('common.close')}
+              >
+                <X className="w-7 h-7 sm:w-4 sm:h-4 text-text/40" />
+              </button>
+            </div>
+
+            <div className="flex-1 p-6 sm:p-5 flex flex-col gap-10 sm:gap-6 overflow-y-auto custom-scrollbar">
 
               {/* Text Model Selection */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-text/30 uppercase tracking-widest">
-                  <Type className="w-3 h-3" />
-                  {t('common.text_model')}
+              <div className="flex flex-col gap-4 sm:gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[11px] sm:text-[10px] font-bold text-text/40 uppercase tracking-widest">
+                    <Type className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    {t('common.text_model')}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="flex flex-col gap-2 sm:gap-1.5 sm:max-h-40 overflow-y-auto pr-1 custom-scrollbar">
                   {textModels.length === 0 && !loading && (
                     <button
                       type="button"
                       onClick={() => handleSelectText(CONFIG.DEFAULT_TEXT_MODEL)}
-                      className="text-left px-2 py-1.5 rounded-md text-xs font-medium bg-primary/5 text-primary border border-primary/10"
+                      className="text-left px-4 py-3.5 sm:px-3 sm:py-1.5 rounded-2xl sm:rounded-md text-sm sm:text-xs font-medium bg-primary/5 text-primary border border-primary/10"
                     >
                       {CONFIG.DEFAULT_TEXT_MODEL} (Default)
                     </button>
@@ -306,20 +344,20 @@ const ModelSettings = () => {
                     <button
                       key={m.id}
                       onClick={() => handleSelectText(m.id)}
-                      className={`text-left px-2 py-1.5 rounded-md text-xs font-medium transition-colors flex flex-col gap-0.5 group ${
-                        selectedTextModel === m.id ? 'bg-primary/5 text-primary' : 'hover:bg-slate-50 text-text/70'
+                      className={`text-left px-4 py-3.5 sm:px-3 sm:py-1.5 rounded-2xl sm:rounded-md text-base sm:text-xs font-medium transition-colors flex flex-col gap-1 sm:gap-0.5 group border ${
+                        selectedTextModel === m.id ? 'bg-primary/5 text-primary border-primary/20' : 'hover:bg-slate-50 text-text/70 border-transparent'
                       }`}
                       title={m.description || m.id}
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="truncate pr-2">{m.id}</span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {m.paid_only && <span className="text-[8px] bg-amber-100 text-amber-700 px-1 rounded">PRO</span>}
-                          {selectedTextModel === m.id && <Check className="w-3 h-3" />}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {m.paid_only && <span className="text-[10px] sm:text-[8px] bg-amber-100 text-amber-700 px-1.5 sm:px-1 rounded font-bold">PRO</span>}
+                          {selectedTextModel === m.id && <Check className="w-5 h-5 sm:w-3 sm:h-3" />}
                         </div>
                       </div>
                       {m.description && (
-                        <span className="text-[9px] opacity-40 truncate w-full font-normal">
+                        <span className="text-xs sm:text-[9px] opacity-40 truncate w-full font-normal">
                           {m.description}
                         </span>
                       )}
@@ -329,17 +367,17 @@ const ModelSettings = () => {
               </div>
 
               {/* Image Model Selection */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-text/30 uppercase tracking-widest">
-                  <Image className="w-3 h-3" />
+              <div className="flex flex-col gap-4 sm:gap-2">
+                <div className="flex items-center gap-2 text-[11px] sm:text-[10px] font-bold text-text/30 uppercase tracking-widest">
+                  <Image className="w-4 h-4 sm:w-3 h-3" />
                   {t('common.image_model')}
                 </div>
-                <div className="flex flex-col gap-1 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="flex flex-col gap-2 sm:gap-1.5 sm:max-h-40 overflow-y-auto pr-1 custom-scrollbar">
                   {imageModels.length === 0 && !loading && (
                     <button
                       type="button"
                       onClick={() => handleSelectImage(CONFIG.DEFAULT_IMAGE_MODEL)}
-                      className="text-left px-2 py-1.5 rounded-md text-xs font-medium bg-primary/5 text-primary border border-primary/10"
+                      className="text-left px-4 py-3.5 sm:px-3 sm:py-1.5 rounded-2xl sm:rounded-md text-sm sm:text-xs font-medium bg-primary/5 text-primary border border-primary/10"
                     >
                       {CONFIG.DEFAULT_IMAGE_MODEL} (Default)
                     </button>
@@ -348,20 +386,20 @@ const ModelSettings = () => {
                     <button
                       key={m.id}
                       onClick={() => handleSelectImage(m.id)}
-                      className={`text-left px-2 py-1.5 rounded-md text-xs font-medium transition-colors flex flex-col gap-0.5 group ${
-                        selectedImageModel === m.id ? 'bg-primary/5 text-primary' : 'hover:bg-slate-50 text-text/70'
+                      className={`text-left px-4 py-3.5 sm:px-3 sm:py-1.5 rounded-2xl sm:rounded-md text-base sm:text-xs font-medium transition-colors flex flex-col gap-1 sm:gap-0.5 group border ${
+                        selectedImageModel === m.id ? 'bg-primary/5 text-primary border-primary/20' : 'hover:bg-slate-50 text-text/70 border-transparent'
                       }`}
                       title={m.description || m.id}
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="truncate pr-2">{m.id}</span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {m.paid_only && <span className="text-[8px] bg-amber-100 text-amber-700 px-1 rounded">PRO</span>}
-                          {selectedImageModel === m.id && <Check className="w-3 h-3" />}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {m.paid_only && <span className="text-[10px] sm:text-[8px] bg-amber-100 text-amber-700 px-1.5 sm:px-1 rounded font-bold">PRO</span>}
+                          {selectedImageModel === m.id && <Check className="w-5 h-5 sm:w-3 sm:h-3" />}
                         </div>
                       </div>
                       {m.description && (
-                        <span className="text-[9px] opacity-40 truncate w-full font-normal">
+                        <span className="text-xs sm:text-[9px] opacity-40 truncate w-full font-normal">
                           {m.description}
                         </span>
                       )}
@@ -371,15 +409,15 @@ const ModelSettings = () => {
               </div>
 
               {/* Image Generation Settings */}
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-text/30 uppercase tracking-widest">
-                  <SlidersHorizontal className="w-3 h-3" />
+              <div className="flex flex-col gap-5 sm:gap-3">
+                <div className="flex items-center gap-2 text-[11px] sm:text-[10px] font-bold text-text/30 uppercase tracking-widest">
+                  <SlidersHorizontal className="w-4 h-4 sm:w-3 h-3" />
                   {t('common.image_settings')}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-text/35 uppercase tracking-wider">
+                <div className="grid grid-cols-2 gap-5 sm:gap-3">
+                  <label className="flex flex-col gap-2 sm:gap-1">
+                    <span className="text-[11px] sm:text-[9px] font-bold text-text/35 uppercase tracking-wider">
                       {t('common.image_width')}
                     </span>
                     <input
@@ -389,12 +427,12 @@ const ModelSettings = () => {
                       value={imageSettings.width}
                       onChange={(event) => handleNumberChange('width', STORAGE_KEYS.IMAGE_WIDTH, event.target.value)}
                       onBlur={() => normalizeNumberSetting('width', STORAGE_KEYS.IMAGE_WIDTH, IMAGE_GENERATION_DEFAULTS.width, true)}
-                      className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                      className="w-full rounded-2xl sm:rounded-md border border-slate-200 px-4 py-4 sm:px-3 sm:py-1.5 text-base sm:text-xs font-medium text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-text/35 uppercase tracking-wider">
+                  <label className="flex flex-col gap-2 sm:gap-1">
+                    <span className="text-[11px] sm:text-[9px] font-bold text-text/35 uppercase tracking-wider">
                       {t('common.image_height')}
                     </span>
                     <input
@@ -404,12 +442,12 @@ const ModelSettings = () => {
                       value={imageSettings.height}
                       onChange={(event) => handleNumberChange('height', STORAGE_KEYS.IMAGE_HEIGHT, event.target.value)}
                       onBlur={() => normalizeNumberSetting('height', STORAGE_KEYS.IMAGE_HEIGHT, IMAGE_GENERATION_DEFAULTS.height, true)}
-                      className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                      className="w-full rounded-2xl sm:rounded-md border border-slate-200 px-4 py-4 sm:px-3 sm:py-1.5 text-base sm:text-xs font-medium text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-text/35 uppercase tracking-wider">
+                  <label className="flex flex-col gap-2 sm:gap-1">
+                    <span className="text-[11px] sm:text-[9px] font-bold text-text/35 uppercase tracking-wider">
                       {t('common.image_seed')}
                     </span>
                     <input
@@ -418,12 +456,12 @@ const ModelSettings = () => {
                       value={imageSettings.seed}
                       onChange={(event) => handleNumberChange('seed', STORAGE_KEYS.IMAGE_SEED, event.target.value)}
                       onBlur={() => normalizeNumberSetting('seed', STORAGE_KEYS.IMAGE_SEED, IMAGE_GENERATION_DEFAULTS.seed)}
-                      className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                      className="w-full rounded-2xl sm:rounded-md border border-slate-200 px-4 py-4 sm:px-3 sm:py-1.5 text-base sm:text-xs font-medium text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                     />
                   </label>
 
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-text/35 uppercase tracking-wider">
+                  <div className="flex flex-col gap-2 sm:gap-1">
+                    <span className="text-[11px] sm:text-[9px] font-bold text-text/35 uppercase tracking-wider">
                       {t('common.image_enhance')}
                     </span>
                     <button
@@ -431,14 +469,14 @@ const ModelSettings = () => {
                       role="switch"
                       aria-checked={imageSettings.enhance}
                       onClick={handleEnhanceToggle}
-                      className={`h-[30px] rounded-md border px-2 text-xs font-bold transition-colors flex items-center justify-between ${
+                      className={`h-14 sm:h-[30px] rounded-2xl sm:rounded-md border px-4 sm:px-3 text-base sm:text-xs font-bold transition-colors flex items-center justify-between ${
                         imageSettings.enhance
                           ? 'border-primary/20 bg-primary/10 text-primary'
                           : 'border-slate-200 bg-white text-text/40'
                       }`}
                     >
                       <span>{imageSettings.enhance ? 'ON' : 'OFF'}</span>
-                      <span className={`h-3.5 w-3.5 rounded-full transition-colors ${
+                      <span className={`h-5 w-5 sm:h-3.5 sm:w-3.5 rounded-full transition-colors ${
                         imageSettings.enhance ? 'bg-primary' : 'bg-slate-200'
                       }`} />
                     </button>
@@ -447,24 +485,24 @@ const ModelSettings = () => {
               </div>
 
               {/* Reference Image Upload */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-text/30 uppercase tracking-widest">
-                  <Image className="w-3 h-3" />
+              <div className="flex flex-col gap-5 sm:gap-2">
+                <div className="flex items-center gap-2 text-[11px] sm:text-[10px] font-bold text-text/30 uppercase tracking-widest">
+                  <Image className="w-4 h-4 sm:w-3 h-3" />
                   {t('common.reference_image')}
                 </div>
 
                 {imageSettings.referenceImage && (
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 p-2">
+                  <div className="flex items-center gap-4 sm:gap-3 rounded-[1.5rem] sm:rounded-lg border border-slate-100 bg-slate-50 p-4 sm:p-2">
                     <img
                       src={imageSettings.referenceImage.url}
                       alt={t('common.reference_image')}
-                      className="h-12 w-16 rounded-md object-cover bg-white border border-slate-100"
+                      className="h-16 w-16 sm:h-12 sm:w-16 rounded-2xl sm:rounded-md object-cover bg-white border border-slate-100 shrink-0"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-text/70">
+                      <p className="truncate text-sm sm:text-xs font-semibold text-text/70">
                         {imageSettings.referenceImage.name || imageSettings.referenceImage.url}
                       </p>
-                      <p className="text-[10px] text-text/35">
+                      <p className="text-xs sm:text-[10px] text-text/35">
                         {[imageSettings.referenceImage.contentType, formatBytes(imageSettings.referenceImage.size)]
                           .filter(Boolean)
                           .join(' · ')}
@@ -473,10 +511,10 @@ const ModelSettings = () => {
                     <button
                       type="button"
                       onClick={() => setReferenceImage(null)}
-                      className="p-1 text-text/30 hover:text-red-500 transition-colors"
+                      className="p-3 sm:p-1 text-text/30 hover:text-red-500 transition-colors"
                       title={t('common.clear_reference')}
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-6 h-6 sm:w-3.5 sm:h-3.5" />
                     </button>
                   </div>
                 )}
@@ -492,34 +530,46 @@ const ModelSettings = () => {
                   type="button"
                   disabled={!apiKey || uploading}
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-text/60 transition-colors hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center justify-center gap-2 rounded-2xl sm:rounded-md border border-slate-200 px-6 py-4 sm:py-2 text-base sm:text-xs font-bold text-text/60 transition-colors hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {uploading ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-5 h-5 sm:w-3.5 sm:h-3.5 animate-spin" />
                   ) : (
-                    <Upload className="w-3.5 h-3.5" />
+                    <Upload className="w-5 h-5 sm:w-3.5 sm:h-3.5" />
                   )}
                   {imageSettings.referenceImage ? t('common.replace_reference') : t('common.upload_reference')}
                 </button>
 
                 {!apiKey && (
-                  <p className="text-[10px] text-text/35">
+                  <p className="text-xs sm:text-[10px] text-text/35 text-center sm:text-left">
                     {t('common.upload_login_required')}
                   </p>
                 )}
                 {uploadError && (
-                  <p className="text-[10px] font-medium text-red-500">
+                  <p className="text-xs sm:text-[10px] font-medium text-red-500 text-center sm:text-left">
                     {uploadError}
                   </p>
                 )}
               </div>
 
               {loading && (
-                <div className="flex items-center justify-center py-2">
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                <div className="flex items-center justify-center py-4 sm:py-2">
+                  <Loader2 className="w-6 h-6 sm:w-4 sm:h-4 text-primary animate-spin" />
                 </div>
               )}
             </div>
+
+            {/* Mobile Logout (Optional, but helps accessibility) */}
+            {apiKey && (
+              <div className="p-6 border-t border-slate-100 sm:hidden">
+                <button
+                  onClick={logout}
+                  className="w-full py-4 rounded-2xl bg-red-50 text-red-600 text-base font-bold transition-colors active:bg-red-100"
+                >
+                  {t('common.logout')}
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

@@ -13,6 +13,7 @@
     "error_forbidden": "Access denied or model unavailable for your account tier.",
     "error_failed_generation": "Failed to generate illustration. Please try again.",
     "error_prompt_length_limit": "The text model used all output budget before returning a prompt. Try a faster text model or retry.",
+    "error_missing_prompt": "Generate or enter an image prompt first.",
     "loading": "Processing...",
     "retry": "Click to retry",
     "paragraph": "Paragraph",
@@ -44,13 +45,24 @@
     "upload_file_too_large": "The reference image is too large. Maximum size is 50 MB.",
     "upload_failed": "Failed to upload the reference image. Please try again.",
     "usage_90d": "90d {{requests}} req - ${{cost}}",
-    "usage_90d_title": "Last 90 days usage"
+    "usage_90d_title": "Last 90 days usage",
+    "generate_from_prompt": "Generate from Prompt",
+    "generate_prompt": "Generate Prompt",
+    "regenerate_prompt": "Regenerate Prompt",
+    "generate_image": "Generate Image",
+    "regenerate_image": "Regenerate Image",
+    "generating_prompt_status": "Generating Prompt...",
+    "prompt_ready_status": "Prompt Ready",
+    "prompt_placeholder": "Edit or enter a prompt before generating the image...",
+    "image_prompt": "Image Prompt",
+    "article_text": "Article Text",
+    "segments": "Segments"
   },
   "styles": {
     "photo": "Photorealistic",
     "illustration": "Illustration",
     "painting": "Painting",
     "free": "AI Freestyle",
-    "prompt_hint": "Illustration will be generated immediately after style selection"
+    "prompt_hint": "Choose a style to generate the image prompt"
   }
 }
