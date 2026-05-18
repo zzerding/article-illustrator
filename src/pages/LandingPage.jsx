@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import editorDesktop from '../assets/editor-desktop.png';
 
 const LandingPage = () => {
   const { login } = useAuth();
@@ -42,7 +43,7 @@ const LandingPage = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
           </div>
           <img 
-            src="/docs/ui/editor-desktop.png" 
+            src={editorDesktop} 
             alt="Editor Preview" 
             className="w-full h-auto"
             onError={(e) => {
