@@ -1,0 +1,3 @@
+name = "article-illustrator"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-05-18"
