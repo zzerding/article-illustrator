@@ -6,6 +6,117 @@ import { CONFIG, STYLE_PROMPTS } from '../config';
 import { useTranslation } from 'react-i18next';
 
 const POLLINATIONS_SAFE_FILTERS = 'privacy,secrets';
+const MAX_PARAGRAPH_COUNT = 50;
+
+const normalizeText = (text) => text.replace(/\r\n/g, '\n').trim();
+
+const extractRawParagraphs = (text) =>
+  normalizeText(text)
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+
+const distributeIntoBuckets = (items, bucketCount) => {
+  if (!items.length || bucketCount <= 0) return [];
+
+  const result = [];
+  let cursor = 0;
+
+  for (let index = 0; index < bucketCount; index += 1) {
+    const remainingBuckets = bucketCount - index;
+    const remainingItems = items.length - cursor;
+    const take = index === bucketCount - 1
+      ? remainingItems
+      : Math.max(1, Math.ceil(remainingItems / remainingBuckets));
+
+    const chunk = items.slice(cursor, cursor + take).join(' ').trim();
+    if (chunk) {
+      result.push(chunk);
+    }
+    cursor += take;
+    if (cursor >= items.length) {
+      break;
+    }
+  }
+
+  return result;
+};
+
+const splitByPunctuation = (text) => {
+  const normalized = normalizeText(text);
+  const lines = normalized.split('\n');
+  return lines
+    .flatMap((line) =>
+      line
+        .match(/[^。！？!?；;,:，,.。\n]+[。！？!?；;,:，,.]?/g)
+        ?.map((chunk) => chunk.replace(/\s+/g, ' ').trim())
+    )
+    .filter((chunk) => !!chunk);
+};
+
+const splitByCharQuotaWithPadding = (text, targetCount) => {
+  if (targetCount <= 1) return [text];
+
+  const nonWhitespaceChars = text.replace(/\s/g, '').length;
+  const baseChunkSize = Math.floor(nonWhitespaceChars / targetCount);
+  const remainder = nonWhitespaceChars % targetCount;
+  const chunks = [];
+  let cursor = 0;
+
+  for (let i = 0; i < targetCount; i += 1) {
+    const neededNonWhitespace = baseChunkSize + (i < remainder ? 1 : 0);
+    if (i === targetCount - 1) {
+      chunks.push(text.slice(cursor));
+      break;
+    }
+
+    let nonWhitespaceCount = 0;
+    let chunk = '';
+
+    while (cursor < text.length && nonWhitespaceCount < neededNonWhitespace) {
+      const ch = text[cursor];
+      chunk += ch;
+      if (!/\s/.test(ch)) nonWhitespaceCount += 1;
+      cursor += 1;
+    }
+
+    while (cursor < text.length && /\s/.test(text[cursor])) {
+      chunk += text[cursor];
+      cursor += 1;
+    }
+
+    chunks.push(chunk);
+  }
+
+  return chunks;
+};
+
+const splitByIllustrationCount = (text, requestedCount) => {
+  const baseCount = Number.isFinite(Number(requestedCount))
+    ? Math.max(1, Math.min(Math.floor(requestedCount), MAX_PARAGRAPH_COUNT))
+    : 1;
+  const raw = normalizeText(text);
+  if (!raw) return [];
+
+  const safeMax = Math.max(1, Math.min(MAX_PARAGRAPH_COUNT, raw.replace(/\s/g, '').length || 1));
+  const targetCount = Math.min(baseCount, safeMax);
+
+  const rawParagraphs = extractRawParagraphs(raw);
+
+  if (rawParagraphs.length >= targetCount) {
+    return distributeIntoBuckets(rawParagraphs, targetCount);
+  }
+
+  const sentenceChunks = splitByPunctuation(raw);
+  if (sentenceChunks.length >= targetCount) {
+    return distributeIntoBuckets(sentenceChunks, targetCount);
+  }
+
+  const denseText = raw.replace(/\s+/g, ' ');
+  const chunks = splitByCharQuotaWithPadding(denseText, targetCount);
+
+  return chunks.map((chunk) => chunk.trim()).filter((chunk) => !!chunk);
+};
 
 const textFromChatContent = (content) => {
   if (typeof content === 'string') {
@@ -70,22 +181,24 @@ const EditorPage = () => {
   const { apiKey, logout } = useAuth();
   const { t } = useTranslation();
   const [articleText, setArticleText] = useState('');
+  const [illustrationCount, setIllustrationCount] = useState('3');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [error, setError] = useState(null);
+  const illustrationCountNumber = Number.isFinite(Number(illustrationCount))
+    ? Number(illustrationCount)
+    : 1;
+  const sanitizedIllustrationCount = Math.max(1, Math.floor(illustrationCountNumber));
 
   const handleParse = () => {
     if (!articleText.trim()) return;
     setIsProcessing(true);
 
-    // Split text into paragraphs as per design spec
-    const rawParagraphs = articleText
-      .split(/\n{2,}/)
-      .map(p => p.replace(/\n/g, ' ').trim())
-      .filter(p => p.length >= 20)
-      .slice(0, 50);
-
-    const initialParagraphs = rawParagraphs.map(text => ({
+    const splitResult = splitByIllustrationCount(
+      articleText,
+      sanitizedIllustrationCount
+    );
+    const initialParagraphs = splitResult.map((text) => ({
       id: crypto.randomUUID(),
       text,
       status: 'idle',
@@ -245,13 +358,28 @@ Output ONLY the prompt, no explanation.
       {/* Input Section */}
       <div className="mb-12">
         <div className="bg-white/50 border border-slate-200 rounded-2xl p-6 focus-within:border-primary/30 transition-colors">
-          <textarea
-            value={articleText}
-            onChange={(e) => setArticleText(e.target.value)}
-            placeholder={t('common.placeholder')}
-            className="w-full h-48 bg-transparent border-none outline-none resize-none font-sans text-lg text-text leading-relaxed placeholder:text-text/20"
-          />
-          <div className="flex justify-end mt-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-4">
+            <textarea
+              value={articleText}
+              onChange={(e) => setArticleText(e.target.value)}
+              placeholder={t('common.placeholder')}
+              className="w-full h-48 bg-transparent border-none outline-none resize-none font-sans text-lg text-text leading-relaxed placeholder:text-text/20"
+            />
+            <div className="sm:w-36">
+              <label className="text-[10px] font-bold text-text/40 uppercase tracking-wider">
+                {t('common.illustration_count_label')}
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={MAX_PARAGRAPH_COUNT}
+                value={illustrationCount}
+                onChange={(e) => setIllustrationCount(e.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
             <button
               onClick={handleParse}
               disabled={isProcessing || !articleText.trim()}
