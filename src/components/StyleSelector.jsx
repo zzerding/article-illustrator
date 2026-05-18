@@ -1,37 +1,33 @@
 import React, { useState } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { Camera, Paintbrush, Frame, Sparkles, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useTranslation } from 'react-i18next';
 
-const styles = [
-  { id: 'watercolor', name: 'Watercolor', description: 'Soft, artistic painted look' },
-  { id: '3d-render', name: '3D Render', description: 'Modern, glossy 3D characters' },
-  { id: 'minimalist', name: 'Minimalist', description: 'Clean lines, limited palette' },
-  { id: 'pixel-art', name: 'Pixel Art', description: 'Retro 8-bit aesthetic' },
-  { id: 'cinematic', name: 'Cinematic', description: 'High contrast, dramatic lighting' },
+const getStyles = (t) => [
+  { id: 'photo', name: t('styles.photo'), description: 'photorealistic, professional photography', icon: Camera },
+  { id: 'illustration', name: t('styles.illustration'), description: 'editorial illustration, flat design', icon: Paintbrush },
+  { id: 'painting', name: t('styles.painting'), description: 'oil painting, artistic', icon: Frame },
+  { id: 'free', name: t('styles.free'), description: '', icon: Sparkles },
 ];
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-const StyleSelector = ({ selectedStyleId, onSelect }) => {
+const StyleSelector = ({ onSelect, buttonText, className }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const selectedStyle = styles.find(s => s.id === selectedStyleId) || styles[0];
+  const { t } = useTranslation();
+  const styles = getStyles(t);
 
   return (
-    <div className="relative">
+    <div className="relative inline-block">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        className="flex items-center justify-between w-full px-4 py-3 bg-white border border-border rounded-xl hover:border-slate-300 transition-all text-left"
+        className={cn("flex items-center gap-1 transition-all", className)}
       >
-        <div>
-          <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Illustration Style</span>
-          <span className="block font-medium text-slate-900">{selectedStyle.name}</span>
-        </div>
-        <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform", isOpen && "rotate-180")} />
+        {buttonText}
+        {typeof buttonText === 'string' && <ChevronDown className={cn("w-4 h-4 opacity-40 transition-transform", isOpen && "rotate-180")} />}
       </button>
 
       {isOpen && (
@@ -40,27 +36,21 @@ const StyleSelector = ({ selectedStyleId, onSelect }) => {
             className="fixed inset-0 z-10" 
             onClick={() => setIsOpen(false)} 
           />
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border rounded-xl shadow-xl z-20 overflow-hidden">
-            <div className="p-1" role="listbox">
+          <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-left">
+            <div className="p-1.5 flex flex-col gap-1" role="listbox">
+              <div className="px-3 py-2 text-[10px] font-bold text-text/30 uppercase tracking-widest">{t('styles.prompt_hint')}</div>
               {styles.map((style) => (
                 <button
                   key={style.id}
                   role="option"
-                  aria-selected={selectedStyleId === style.id}
                   onClick={() => {
                     onSelect(style.id);
                     setIsOpen(false);
                   }}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-colors",
-                    selectedStyleId === style.id ? "bg-orange-50 text-primary" : "hover:bg-slate-50 text-slate-700"
-                  )}
+                  className="w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 hover:bg-orange-50/50 group transition-colors"
                 >
-                  <div>
-                    <span className="block font-medium">{style.name}</span>
-                    <span className="block text-xs text-slate-500">{style.description}</span>
-                  </div>
-                  {selectedStyleId === style.id && <Check className="w-4 h-4" />}
+                  <style.icon className="w-4 h-4 text-text/40 group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium text-text/80 group-hover:text-text transition-colors">{style.name}</span>
                 </button>
               ))}
             </div>

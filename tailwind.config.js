@@ -7,17 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#FDFCFB', // Warm background
+        background: '#FAFAF8', // Cream background from design.md
         primary: {
-          DEFAULT: '#F97316', // Orange accents
-          hover: '#EA580C',
+          DEFAULT: '#E8622A', // Warm orange accent
+          hover: '#D15524',
         },
-        secondary: '#4B5563',
+        text: '#1A1A1A', // Dark ink text
         border: '#E5E7EB',
       },
       fontFamily: {
-        serif: ['Source Serif 4', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans: ['"Noto Sans SC"', 'Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

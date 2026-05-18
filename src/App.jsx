@@ -1,19 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import EditorPage from './pages/EditorPage';
 
-function App() {
-  const [view, setView] = useState('landing'); // 'landing' or 'editor'
+function AppContent() {
+  const { apiKey, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <MainLayout onBackToLanding={() => setView('landing')}>
-      {view === 'landing' ? (
-        <LandingPage onStart={() => setView('editor')} />
+    <MainLayout>
+      {!apiKey ? (
+        <LandingPage />
       ) : (
         <EditorPage />
       )}
     </MainLayout>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

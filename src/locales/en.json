@@ -1,0 +1,35 @@
+{
+  "landing": {
+    "title": "Article\nIllustrator",
+    "description": "Paste an article, select any paragraph, and AI will instantly generate an illustration for it.",
+    "cta": "Start with my Pollen",
+    "privacy": "Uses your own Pollinations Pollen, this app does not store any data"
+  },
+  "common": {
+    "about": "About",
+    "logout": "Logout",
+    "recharge": "Please recharge at pollinations.ai",
+    "error_insufficient_pollen": "Insufficient Pollen balance. Please recharge at pollinations.ai",
+    "error_failed_generation": "Failed to generate illustration. Please try again.",
+    "loading": "Processing...",
+    "retry": "Click to retry",
+    "paragraph": "Paragraph",
+    "content": "Content",
+    "illustration": "Illustration",
+    "download": "Download",
+    "regenerate": "Regenerate",
+    "generated_status": "Illustration Generated",
+    "delete_paragraph": "Delete Paragraph",
+    "empty_state": "Start parsing your article, AI will bring you inspiration.",
+    "placeholder": "Paste your article here...",
+    "parse_button": "Parse Paragraphs",
+    "generating_status": "Generating..."
+  },
+  "styles": {
+    "photo": "Photorealistic",
+    "illustration": "Illustration",
+    "painting": "Painting",
+    "free": "AI Freestyle",
+    "prompt_hint": "Illustration will be generated immediately after style selection"
+  }
+}

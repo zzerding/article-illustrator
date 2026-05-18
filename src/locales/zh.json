@@ -1,0 +1,35 @@
+{
+  "landing": {
+    "title": "Article\nIllustrator",
+    "description": "把一篇文章粘贴进来，选中任意段落，\nAI 立刻为它生成一张配图。",
+    "cta": "用我的 Pollen 开始",
+    "privacy": "使用你自己的 Pollinations Pollen，本应用不存储任何数据"
+  },
+  "common": {
+    "about": "关于",
+    "logout": "退出登录",
+    "recharge": "请到 pollinations.ai 充值",
+    "error_insufficient_pollen": "Pollen 余额不足，请到 pollinations.ai 充值",
+    "error_failed_generation": "生成失败，请重试。",
+    "loading": "正在处理...",
+    "retry": "点击重试",
+    "paragraph": "段落",
+    "content": "内容",
+    "illustration": "配图",
+    "download": "下载",
+    "regenerate": "重新生成",
+    "generated_status": "已生成配图",
+    "delete_paragraph": "删除段落",
+    "empty_state": "开始解析你的文章，AI 将为你带来灵感。",
+    "placeholder": "粘贴你的文章...",
+    "parse_button": "解析段落",
+    "generating_status": "正在生成..."
+  },
+  "styles": {
+    "photo": "写实摄影",
+    "illustration": "插画风",
+    "painting": "油画风",
+    "free": "AI 自由发挥",
+    "prompt_hint": "选择风格后将立即生成配图"
+  }
+}
