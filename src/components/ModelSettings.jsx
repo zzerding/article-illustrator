@@ -150,7 +150,7 @@ const ModelDropdown = ({ label, icon: Icon, models, selectedId, onSelect, search
   );
 };
 
-const ModelSettings = ({ inline = false }) => {
+const ModelSettings = ({ inline = false, hideText = false }) => {
   const { t } = useTranslation();
   const { apiKey, logout } = useAuth();
   const fileInputRef = useRef(null);
@@ -393,7 +393,7 @@ const ModelSettings = ({ inline = false }) => {
   };
 
   const settingsContent = (
-    <div className={`flex flex-col gap-10 sm:gap-6 ${inline ? 'p-6' : 'p-6'}`}>
+    <div className={`flex flex-col gap-10 sm:gap-6 ${inline ? 'p-0' : 'p-6'}`}>
       {/* Text Model Selection */}
       <ModelDropdown
         label={t('common.text_model')}
@@ -583,7 +583,7 @@ const ModelSettings = ({ inline = false }) => {
 
   if (inline) {
     return (
-      <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
         {settingsContent}
       </div>
     );
@@ -593,15 +593,20 @@ const ModelSettings = ({ inline = false }) => {
     <div className="relative inline-block text-left">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all border group shadow-sm hover:shadow-md active:scale-95 ${
+        className={`flex items-center gap-2 ${hideText ? 'p-2.5' : 'px-4 py-2.5'} rounded-2xl transition-all border group shadow-sm hover:shadow-md active:scale-95 ${
           isOpen
             ? 'bg-primary border-primary text-white'
             : 'bg-white/80 backdrop-blur-sm border-slate-200 text-text/80 hover:bg-white hover:border-primary/30'
         }`}
+        title={hideText ? t('common.settings') : undefined}
       >
         <Settings2 className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-text/60 group-hover:text-primary'}`} />
-        <span className="text-xs font-bold uppercase tracking-widest">{t('common.settings')}</span>
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-text/30 group-hover:text-primary/50'}`} />
+        {!hideText && (
+          <>
+            <span className="text-xs font-bold uppercase tracking-widest">{t('common.settings')}</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : 'text-text/30 group-hover:text-primary/50'}`} />
+          </>
+        )}
       </button>
 
       {isOpen && (
