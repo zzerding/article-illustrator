@@ -13,53 +13,62 @@ const sanitizeFileName = (name) => {
   return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, '_').slice(0, 100) || 'article';
 };
 
-const buildMarkdown = (paragraphs) => {
-  const lines = paragraphs.map((p, index) => {
+const buildMarkdown = (paragraphs, title) => {
+  const meta = [
+    '---',
+    `title: ${title || 'Untitled Article'}`,
+    `date: ${new Date().toLocaleDateString()}`,
+    'generator: Article Illustrator',
+    '---',
+    '',
+  ].join('\n');
+
+  let imageCounter = 0;
+  const lines = paragraphs.map((p) => {
     const parts = [];
 
-    parts.push(`### Paragraph ${index + 1}`);
-    parts.push('');
     parts.push(p.text);
     parts.push('');
 
     if (p.imageUrl) {
+      imageCounter += 1;
       const ext = getDownloadExtension(p.imageContentType);
-      parts.push(`![Illustration ${index + 1}](images/illustration-${index + 1}.${ext})`);
-      parts.push('');
-    }
-
-    if (p.prompt) {
-      parts.push(`>*Prompt: ${p.prompt}*`);
+      parts.push(`![Illustration ${imageCounter}](images/illustration-${imageCounter}.${ext})`);
       parts.push('');
     }
 
     return parts.join('\n');
   });
 
-  return lines.join('\n---\n\n');
+  return meta + lines.join('\n\n');
 };
 
 const buildHtml = (paragraphs, title) => {
+  let imageCounter = 0;
   const body = paragraphs.map((p, index) => {
-    const imageBlock = p.imageUrl
-      ? `      <div class="image-wrapper">
-        <img src="images/illustration-${index + 1}.${getDownloadExtension(p.imageContentType)}" alt="Illustration ${index + 1}" />
-      </div>`
-      : '';
+    let imageBlock = '';
+    if (p.imageUrl) {
+      imageCounter += 1;
+      imageBlock = `      <div class="image-container">
+        <img src="images/illustration-${imageCounter}.${getDownloadExtension(p.imageContentType)}" alt="Illustration ${imageCounter}" />
+      </div>`;
+    }
 
-    const promptBlock = p.prompt
-      ? `      <p class="prompt">Prompt: ${p.prompt}</p>`
-      : '';
+    const isFirst = index === 0;
+    const textClass = isFirst ? 'text first-paragraph' : 'text';
 
-    return `    <section class="paragraph">
-      <div class="paragraph-header">
-        <span class="paragraph-number">Paragraph ${index + 1}</span>
-      </div>
-      <p class="text">${p.text}</p>
-${imageBlock ? imageBlock + '\n' : ''}${promptBlock ? promptBlock + '\n' : ''}    </section>`;
+    return `    <article class="segment">
+      <p class="${textClass}">${p.text}</p>
+      ${imageBlock}
+    </article>`;
   }).join('\n\n');
 
   const articleTitle = title || 'Article';
+  const currentDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -69,84 +78,139 @@ ${imageBlock ? imageBlock + '\n' : ''}${promptBlock ? promptBlock + '\n' : ''}  
 <title>${articleTitle}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #fafaf8;
+    --ink: #1a1a1a;
+    --accent: #e8622a;
+    --border: #e5e7eb;
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  
   body {
-    font-family: "Playfair Display", Georgia, serif;
-    color: #1a1a1a;
-    background: #fafaf8;
-    line-height: 1.8;
-    padding: 40px 20px;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans SC", sans-serif;
+    line-height: 2.0;
+    -webkit-font-smoothing: antialiased;
   }
-  .container {
-    max-width: 720px;
+
+  .wrapper {
+    max-width: 800px;
     margin: 0 auto;
-    background: #fff;
-    padding: 60px 48px;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-    border: 1px solid #e5e7eb;
+    padding: 80px 24px;
   }
-  h1 {
-    font-size: 2em;
-    margin-bottom: 48px;
-    line-height: 1.3;
-    font-weight: 700;
+
+  header {
+    margin-bottom: 80px;
+    text-align: center;
   }
-  .paragraph { margin-bottom: 48px; }
-  .paragraph-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .paragraph-number {
+
+  .meta {
     font-size: 11px;
     font-weight: 700;
-    color: #e8622a;
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    opacity: 0.6;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: block;
   }
+
+  h1 {
+    font-family: "Playfair Display", serif;
+    font-size: 3rem;
+    line-height: 1.1;
+    margin-bottom: 32px;
+    font-weight: 700;
+  }
+
+  .date {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    opacity: 0.5;
+  }
+
+  .segment {
+    margin-bottom: 64px;
+  }
+
   .text {
-    font-family: "Noto Sans SC", Inter, sans-serif;
-    font-size: 16px;
-    color: #1a1a1a;
-    opacity: 0.8;
-    line-height: 1.8;
-    margin-bottom: 16px;
+    font-size: 1.125rem;
+    margin-bottom: 40px;
+    color: rgba(26, 26, 26, 0.9);
   }
-  .image-wrapper {
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    margin-bottom: 12px;
-    border: 1px solid rgba(0,0,0,0.05);
+
+  .first-paragraph::first-letter {
+    float: left;
+    font-family: "Playfair Display", serif;
+    font-size: 5.5rem;
+    line-height: 0.7;
+    padding-top: 14px;
+    padding-right: 12px;
+    padding-left: 3px;
+    color: var(--ink);
   }
-  .image-wrapper img {
+
+  .image-container {
+    margin: 64px -24px;
+    background: #fff;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+  }
+
+  @media (min-width: 768px) {
+    .image-container {
+      margin: 80px -80px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 0;
+      overflow: hidden;
+    }
+  }
+
+  img {
     width: 100%;
     height: auto;
     display: block;
   }
-  .prompt {
+
+  footer {
+    margin-top: 120px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    text-align: center;
     font-size: 12px;
-    color: #1a1a1a;
     opacity: 0.3;
-    font-style: italic;
+    letter-spacing: 0.1em;
   }
-  hr {
-    border: none;
-    border-top: 1px solid #e5e7eb;
-    margin: 36px 0;
+
+  @media (max-width: 600px) {
+    h1 { font-size: 2.2rem; }
+    .wrapper { padding: 40px 20px; }
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>${articleTitle}</h1>
-${body}
-</div>
+  <div class="wrapper">
+    <header>
+      <span class="meta">Editorial Edition</span>
+      <h1>${articleTitle}</h1>
+      <p class="date">Published on ${currentDate} &middot; Illustrated by AI</p>
+    </header>
+
+    <main>
+      ${body}
+    </main>
+
+    <footer>
+      CREATED WITH ARTICLE ILLUSTRATOR &middot; POWERED BY POLLINATIONS.AI
+    </footer>
+  </div>
 </body>
 </html>`;
 };
@@ -169,7 +233,7 @@ export const downloadPackage = async (paragraphs, title) => {
 
   await Promise.all(imageFetchPromises);
 
-  const mdContent = buildMarkdown(paragraphs);
+  const mdContent = buildMarkdown(paragraphs, title);
   zip.file(`${baseName}.md`, mdContent);
 
   const htmlContent = buildHtml(paragraphs, title);

@@ -28,108 +28,6 @@ const extractRawParagraphs = (text) =>
     .map((paragraph) => paragraph.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
     .filter(p => p.length >= 20);
 
-const distributeIntoBuckets = (items, bucketCount) => {
-  if (!items.length || bucketCount <= 0) return [];
-
-  const result = [];
-  let cursor = 0;
-
-  for (let index = 0; index < bucketCount; index += 1) {
-    const remainingBuckets = bucketCount - index;
-    const remainingItems = items.length - cursor;
-    const take = index === bucketCount - 1
-      ? remainingItems
-      : Math.max(1, Math.ceil(remainingItems / remainingBuckets));
-
-    const chunk = items.slice(cursor, cursor + take).join(' ').trim();
-    if (chunk) {
-      result.push(chunk);
-    }
-    cursor += take;
-    if (cursor >= items.length) {
-      break;
-    }
-  }
-
-  return result;
-};
-
-const splitByPunctuation = (text) => {
-  const normalized = normalizeText(text);
-  const lines = normalized.split('\n');
-  return lines
-    .flatMap((line) =>
-      line
-        .match(/[^。！？!?；;,:，,.。\n]+[。！？!?；;,:，,.]?/g)
-        ?.map((chunk) => chunk.replace(/\s+/g, ' ').trim())
-    )
-    .filter((chunk) => chunk.length >= 20);
-};
-
-const splitByCharQuotaWithPadding = (text, targetCount) => {
-  if (targetCount <= 1) return [text];
-
-  const nonWhitespaceChars = text.replace(/\s/g, '').length;
-  const baseChunkSize = Math.floor(nonWhitespaceChars / targetCount);
-  const remainder = nonWhitespaceChars % targetCount;
-  const chunks = [];
-  let cursor = 0;
-
-  for (let i = 0; i < targetCount; i += 1) {
-    const neededNonWhitespace = baseChunkSize + (i < remainder ? 1 : 0);
-    if (i === targetCount - 1) {
-      chunks.push(text.slice(cursor));
-      break;
-    }
-
-    let nonWhitespaceCount = 0;
-    let chunk = '';
-
-    while (cursor < text.length && nonWhitespaceCount < neededNonWhitespace) {
-      const ch = text[cursor];
-      chunk += ch;
-      if (!/\s/.test(ch)) nonWhitespaceCount += 1;
-      cursor += 1;
-    }
-
-    while (cursor < text.length && /\s/.test(text[cursor])) {
-      chunk += text[cursor];
-      cursor += 1;
-    }
-
-    chunks.push(chunk);
-  }
-
-  return chunks;
-};
-
-const splitByIllustrationCount = (text, requestedCount) => {
-  const baseCount = Number.isFinite(Number(requestedCount))
-    ? Math.max(1, Math.min(Math.floor(requestedCount), MAX_PARAGRAPH_COUNT))
-    : 1;
-  const raw = normalizeText(text);
-  if (!raw) return [];
-
-  const safeMax = Math.max(1, Math.min(MAX_PARAGRAPH_COUNT, raw.replace(/\s/g, '').length || 1));
-  const targetCount = Math.min(baseCount, safeMax);
-
-  const rawParagraphs = extractRawParagraphs(raw);
-
-  if (rawParagraphs.length >= targetCount) {
-    return distributeIntoBuckets(rawParagraphs, targetCount);
-  }
-
-  const sentenceChunks = splitByPunctuation(raw);
-  if (sentenceChunks.length >= targetCount) {
-    return distributeIntoBuckets(sentenceChunks, targetCount);
-  }
-
-  const denseText = raw.replace(/\s+/g, ' ');
-  const chunks = splitByCharQuotaWithPadding(denseText, targetCount);
-
-  return chunks.map((chunk) => chunk.trim()).filter((chunk) => !!chunk);
-};
-
 const textFromChatContent = (content) => {
   if (typeof content === 'string') {
     return content;
@@ -242,7 +140,6 @@ const EditorPage = () => {
   const { t } = useTranslation();
   const activeBlobUrlsRef = useRef(new Set());
   const [articleText, setArticleText] = useState('');
-  const [illustrationCount, setIllustrationCount] = useState('3');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [error, setError] = useState(null);
@@ -279,11 +176,6 @@ const EditorPage = () => {
     }
   };
 
-  const illustrationCountNumber = Number.isFinite(Number(illustrationCount))
-    ? Number(illustrationCount)
-    : 1;
-  const sanitizedIllustrationCount = Math.max(1, Math.floor(illustrationCountNumber));
-
   useEffect(() => {
     const currentBlobUrls = new Set(
       paragraphs
@@ -312,16 +204,10 @@ const EditorPage = () => {
     setIsProcessing(true);
     setError(null);
 
-    // Initial split to check for short segments
-    const rawParagraphs = articleText.split(/\n{2,}/).filter(p => p.trim());
-    const tooShort = rawParagraphs.some(p => p.trim().length < 20);
+    const naturalChunks = extractRawParagraphs(articleText);
+    const tooShort = articleText.split(/\n{2,}/).some(p => p.trim() && p.trim().length < 20);
 
-    const splitResult = splitByIllustrationCount(
-      articleText,
-      sanitizedIllustrationCount
-    );
-
-    let finalChunks = splitResult;
+    let finalChunks = naturalChunks;
     let isTruncated = false;
 
     if (finalChunks.length > MAX_PARAGRAPH_COUNT) {
@@ -332,8 +218,6 @@ const EditorPage = () => {
     if (isTruncated) {
       setError(t('common.error_article_truncated'));
     } else if (tooShort) {
-      // Show info message if some segments were filtered out
-      // (Using error state for simplicity as there's no info state yet)
       setError(t('common.error_segment_too_short'));
     }
 
@@ -350,20 +234,26 @@ const EditorPage = () => {
     setIsProcessing(false);
   };
 
-  const generateImagePrompt = async (paragraphText, style, imageModel) => {
+  const generateImagePrompt = async (paragraphText, style, imageModel, articleContext = '') => {
     const styleHint = STYLE_PROMPTS[style] ? `Style: ${STYLE_PROMPTS[style]}.` : '';
     const selectedTextModel = localStorage.getItem(STORAGE_KEYS.TEXT_MODEL) || CONFIG.DEFAULT_TEXT_MODEL;
     const selectedImageModel = imageModel || readImageGenerationSettings().model;
 
+    const contextSection = articleContext 
+      ? `Background Context of the Article:\n"""\n${articleContext.slice(0, 1000)}${articleContext.length > 1000 ? '...' : ''}\n"""\n`
+      : '';
+
     const userMessage = `
-Convert the following article paragraph into an image generation prompt.
+${contextSection}
+Task: Convert the following specific paragraph from the article above into a vivid image generation prompt.
 Requirements:
 - English only, max 60 words
+- Focus on the visual elements of the paragraph while respecting the overall article context
 - No real person names or copyrighted characters
 - Vivid, visual description suitable for ${selectedImageModel} image model
 - ${styleHint}
 
-Paragraph:
+Paragraph to illustrate:
 """${paragraphText}"""
 
 Output ONLY the prompt, no explanation.
@@ -424,7 +314,7 @@ Output ONLY the prompt, no explanation.
     ));
 
     try {
-      const prompt = await generateImagePrompt(targetParagraph.text, style, imageSettings.model);
+      const prompt = await generateImagePrompt(targetParagraph.text, style, imageSettings.model, articleText);
 
       setParagraphs(prev => prev.map(p =>
         p.id === id ? {
@@ -533,6 +423,10 @@ Output ONLY the prompt, no explanation.
     setParagraphs(prev => prev.filter(p => p.id !== id));
   };
 
+  const handleUpdateParagraphText = (id, newText) => {
+    setParagraphs(prev => prev.map(p => p.id === id ? { ...p, text: newText } : p));
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
       {error && (
@@ -564,34 +458,18 @@ Output ONLY the prompt, no explanation.
                 />
 
                 <div className="pt-4 border-t border-slate-100">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <label className="text-[10px] font-bold text-text/40 uppercase tracking-widest block mb-1.5">
-                        {t('common.illustration_count_label')}
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={MAX_PARAGRAPH_COUNT}
-                        value={illustrationCount}
-                        onChange={(e) => setIllustrationCount(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 bg-white transition-all"
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleParse}
-                      disabled={isProcessing || !articleText.trim()}
-                      className="mt-5 flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-hover disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95"
-                    >
-                      {isProcessing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Wand2 className="w-4 h-4" />
-                      )}
-                      {isProcessing ? t('common.loading') : t('common.parse_button')}
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleParse}
+                    disabled={isProcessing || !articleText.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-hover disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-4 h-4" />
+                    )}
+                    {isProcessing ? t('common.loading') : t('common.parse_button')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -655,6 +533,7 @@ Output ONLY the prompt, no explanation.
                     onGenerateImage={(customPrompt) => generateImageForParagraph(p.id, customPrompt)}
                     onDelete={() => handleDelete(p.id)}
                     onPreview={() => setPreviewImage(p)}
+                    onUpdateText={handleUpdateParagraphText}
                   />
                 ))}
               </div>

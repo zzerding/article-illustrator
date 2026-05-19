@@ -10,13 +10,17 @@ const getDownloadExtension = (contentType) => {
   return 'png';
 };
 
-const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, onDelete, onPreview }) => {
+const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, onDelete, onPreview, onUpdateText }) => {
   const { t } = useTranslation();
   const [editedPrompt, setEditedPrompt] = useState(paragraph.prompt || '');
 
   useEffect(() => {
     setEditedPrompt(paragraph.prompt || '');
   }, [paragraph.prompt]);
+
+  const handleTextChange = (e) => {
+    onUpdateText(paragraph.id, e.target.value);
+  };
 
   const isIdle = paragraph.status === 'idle';
   const isPrompting = paragraph.status === 'prompting';
@@ -64,10 +68,17 @@ const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, on
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Column: The Source (Text & Prompts) */}
           <div className="flex flex-col gap-4">
-            <div className="relative">
-              <p className="text-base text-text/80 leading-relaxed font-sans">
-                {paragraph.text}
-              </p>
+            <div className="relative group/text">
+              <textarea
+                value={paragraph.text}
+                onChange={handleTextChange}
+                className="w-full bg-transparent border-none outline-none resize-none text-xs text-text/70 leading-relaxed font-sans focus:text-text transition-colors custom-scrollbar"
+                rows={Math.max(2, Math.ceil(paragraph.text.length / 40))}
+                placeholder={t('common.placeholder')}
+              />
+              <div className="absolute -right-1 -top-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
+                <Edit3 className="w-3 h-3 text-text/20" />
+              </div>
             </div>
 
             {/* Prompt Generation Control */}

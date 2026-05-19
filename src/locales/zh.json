@@ -29,7 +29,6 @@
     "delete_paragraph": "删除段落",
     "empty_state": "开始解析你的文章，AI 将为你带来灵感。",
     "placeholder": "粘贴你的文章...",
-    "illustration_count_label": "插图数量",
     "parse_button": "解析段落",
     "generating_status": "正在生成...",
     "settings": "设置",

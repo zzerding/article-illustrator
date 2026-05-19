@@ -29,7 +29,6 @@
     "delete_paragraph": "Delete Paragraph",
     "empty_state": "Start parsing your article, AI will bring you inspiration.",
     "placeholder": "Paste your article here...",
-    "illustration_count_label": "Illustration Count",
     "parse_button": "Parse Paragraphs",
     "generating_status": "Generating...",
     "settings": "Settings",

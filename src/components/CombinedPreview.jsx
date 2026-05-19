@@ -32,42 +32,33 @@ const CombinedPreview = ({ paragraphs, title, onClose }) => {
             )}
 
             <div className="space-y-12">
-              {paragraphs.map((paragraph, index) => (
-                <div key={paragraph.id} className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-primary/40 uppercase tracking-[0.2em]">
-                      {t('common.paragraph')} {index + 1}
-                    </span>
-                    <div className="h-px flex-1 bg-border/50" />
-                  </div>
-
-                  <p className="text-base sm:text-lg text-text/80 leading-relaxed font-sans">
-                    {paragraph.text}
-                  </p>
-
-                  {paragraph.imageUrl && (
-                    <div className="rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5">
-                      <img
-                        src={paragraph.imageUrl}
-                        alt={paragraph.prompt || `Illustration ${index + 1}`}
-                        className="w-full h-auto object-contain max-h-[500px]"
-                      />
-                    </div>
-                  )}
-
-                  {paragraph.prompt && (
-                    <p className="text-xs text-text/30 italic leading-relaxed">
-                      "{paragraph.prompt}"
+              {paragraphs.map((paragraph, index) => {
+                const isFirst = index === 0;
+                
+                return (
+                  <div key={paragraph.id} className="space-y-8">
+                    <p className={`text-base sm:text-xl text-text/90 leading-relaxed font-sans ${isFirst ? 'first-letter:text-6xl first-letter:font-serif first-letter:font-bold first-letter:mr-3 first-letter:float-left first-letter:leading-none first-letter:pt-3' : ''}`}>
+                      {paragraph.text}
                     </p>
-                  )}
-                </div>
-              ))}
+
+                    {paragraph.imageUrl && (
+                      <div className="rounded-3xl overflow-hidden shadow-2xl ring-1 ring-black/5 my-12">
+                        <img
+                          src={paragraph.imageUrl}
+                          alt=""
+                          className="w-full h-auto object-contain max-h-[600px]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default CombinedPreview;
