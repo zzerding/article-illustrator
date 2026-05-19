@@ -139,14 +139,52 @@ const EditorPage = () => {
   const { apiKey, logout } = useAuth();
   const { t } = useTranslation();
   const activeBlobUrlsRef = useRef(new Set());
-  const [articleText, setArticleText] = useState('');
+  const [articleText, setArticleText] = useState(() => {
+    return localStorage.getItem(STORAGE_KEYS.ARTICLE_TEXT) || '';
+  });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paragraphs, setParagraphs] = useState([]);
+  const [paragraphs, setParagraphs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PARAGRAPHS);
+      if (saved) {
+        const list = JSON.parse(saved);
+        return list.map(p => {
+          if (p.status === 'generating') {
+            return { ...p, status: 'prompted' };
+          }
+          if (p.status === 'prompting') {
+            return { ...p, status: 'idle' };
+          }
+          return p;
+        });
+      }
+      return [];
+    } catch (e) {
+      console.error('Error loading paragraphs from localStorage', e);
+      return [];
+    }
+  });
   const [error, setError] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [showCombinedPreview, setShowCombinedPreview] = useState(false);
   const [isPackaging, setIsPackaging] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PARAGRAPHS);
+      const list = saved ? JSON.parse(saved) : [];
+      return list.length > 0 ? list[0].id : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ARTICLE_TEXT, articleText);
+  }, [articleText]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PARAGRAPHS, JSON.stringify(paragraphs));
+  }, [paragraphs]);
 
   const articleTitle = paragraphs.length > 0
     ? paragraphs[0].text.replace(/[“”""'']/g, '').slice(0, 60).trim() + (paragraphs[0].text.length > 60 ? '…' : '')
@@ -400,7 +438,7 @@ Output ONLY the prompt, no explanation.
         throw new Error('FAILED_IMAGE_GENERATION');
       }
 
-      const imageUrl = URL.createObjectURL(imageBlob);
+      const imageUrl = imageRequestUrl;
 
       setParagraphs(prev => prev.map(p =>
         p.id === id ? {

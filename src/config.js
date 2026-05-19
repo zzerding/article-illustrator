@@ -31,6 +31,8 @@ export const STORAGE_KEYS = {
   IMAGE_SEED: "pollen_image_seed",
   IMAGE_ENHANCE: "pollen_image_enhance",
   REFERENCE_IMAGE: "pollen_reference_image",
+  PARAGRAPHS: "pollen_paragraphs",
+  ARTICLE_TEXT: "pollen_article_text",
 };
 
 export const IMAGE_GENERATION_DEFAULTS = {
