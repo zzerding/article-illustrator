@@ -564,13 +564,13 @@ Output ONLY the prompt, no explanation.
               )}
 
               {/* Table Headers - Hidden on mobile, shown on lg screens */}
-              <div className="hidden lg:grid grid-cols-[4fr_6fr] gap-0 mb-4 px-4">
-                <div className="pb-4 pr-8 border-r border-slate-200/60">
+              <div className="hidden lg:grid grid-cols-[4fr_6fr] gap-0 mb-4 px-4 sticky top-20 z-10 bg-background/95 backdrop-blur-md border-b border-slate-200/40 py-3">
+                <div className="pr-8 border-r border-slate-200/60 flex items-center">
                   <h2 className="text-sm font-bold text-text/60 tracking-wider">
                     {t('common.paragraph')}
                   </h2>
                 </div>
-                <div className="pb-4 pl-8 flex items-center justify-between">
+                <div className="pl-8 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-text/60 tracking-wider">
                     {t('common.illustration')}
                   </h2>
