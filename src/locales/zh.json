@@ -12,6 +12,8 @@
     "error_insufficient_pollen": "Pollen 余额不足，请到 pollinations.ai 充值",
     "error_forbidden": "访问被拒绝，或者该模型在你的账户等级下不可用。",
     "error_failed_generation": "生成失败，请重试。",
+    "error_article_truncated": "文章内容过长，仅解析前 50 个分段。",
+    "error_segment_too_short": "已过滤掉少于 20 字的简短分段。",
     "error_prompt_length_limit": "文本模型在返回提示词前用完了输出预算，请切换更快的文本模型或重试。",
     "error_missing_prompt": "请先生成或输入图片提示词。",
     "loading": "正在处理...",
@@ -58,7 +60,14 @@
     "prompt_placeholder": "生成图片前，可先编辑或输入提示词...",
     "image_prompt": "图片提示词",
     "article_text": "文章正文",
-    "segments": "文本分段"
+    "segments": "文本分段",
+    "preview_article": "预览文章",
+    "download_package": "打包下载",
+    "combined_preview_title": "文章预览",
+    "package_preparing": "正在打包...",
+    "package_ready": "下载就绪",
+    "download_as_md": "下载 MD",
+    "download_as_html": "下载 HTML"
   },
   "styles": {
     "photo": "写实摄影",

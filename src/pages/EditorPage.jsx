@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, HelpCircle, Sparkles, Wand2, Loader2, X, Download } from 'lucide-react';
+import { AlertCircle, HelpCircle, Sparkles, Wand2, Loader2, X, Download, Eye, Package } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
+import CombinedPreview from '../components/CombinedPreview';
 import { useAuth } from '../context/AuthContext';
 import { CONFIG, STORAGE_KEYS, STYLE_PROMPTS } from '../config';
 import { readImageGenerationSettings } from '../imageSettings';
+import { downloadPackage } from '../utils/packageDownload';
 import { useTranslation } from 'react-i18next';
 
 const MAX_PARAGRAPH_COUNT = 50;
@@ -24,7 +26,7 @@ const extractRawParagraphs = (text) =>
   normalizeText(text)
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-    .filter(Boolean);
+    .filter(p => p.length >= 20);
 
 const distributeIntoBuckets = (items, bucketCount) => {
   if (!items.length || bucketCount <= 0) return [];
@@ -61,7 +63,7 @@ const splitByPunctuation = (text) => {
         .match(/[^。！？!?；;,:，,.。\n]+[。！？!?；;,:，,.]?/g)
         ?.map((chunk) => chunk.replace(/\s+/g, ' ').trim())
     )
-    .filter((chunk) => !!chunk);
+    .filter((chunk) => chunk.length >= 20);
 };
 
 const splitByCharQuotaWithPadding = (text, targetCount) => {
@@ -245,9 +247,17 @@ const EditorPage = () => {
   const [paragraphs, setParagraphs] = useState([]);
   const [error, setError] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [showCombinedPreview, setShowCombinedPreview] = useState(false);
+  const [isPackaging, setIsPackaging] = useState(false);
+
+  const articleTitle = paragraphs.length > 0
+    ? paragraphs[0].text.replace(/[“”""'']/g, '').slice(0, 60).trim() + (paragraphs[0].text.length > 60 ? '…' : '')
+    : t('common.article_text');
+
+  const hasCompletedImages = paragraphs.some(p => p.status === 'completed' && p.imageUrl);
 
   useEffect(() => {
-    if (previewImage) {
+    if (previewImage || showCombinedPreview) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -255,7 +265,19 @@ const EditorPage = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [previewImage]);
+  }, [previewImage, showCombinedPreview]);
+
+  const handlePackageDownload = async () => {
+    if (isPackaging) return;
+    setIsPackaging(true);
+    try {
+      await downloadPackage(paragraphs, articleTitle);
+    } catch (e) {
+      console.error('Package download failed', e);
+    } finally {
+      setIsPackaging(false);
+    }
+  };
 
   const illustrationCountNumber = Number.isFinite(Number(illustrationCount))
     ? Number(illustrationCount)
@@ -288,12 +310,34 @@ const EditorPage = () => {
   const handleParse = () => {
     if (!articleText.trim()) return;
     setIsProcessing(true);
+    setError(null);
+
+    // Initial split to check for short segments
+    const rawParagraphs = articleText.split(/\n{2,}/).filter(p => p.trim());
+    const tooShort = rawParagraphs.some(p => p.trim().length < 20);
 
     const splitResult = splitByIllustrationCount(
       articleText,
       sanitizedIllustrationCount
     );
-    const initialParagraphs = splitResult.map((text) => ({
+
+    let finalChunks = splitResult;
+    let isTruncated = false;
+
+    if (finalChunks.length > MAX_PARAGRAPH_COUNT) {
+      finalChunks = finalChunks.slice(0, MAX_PARAGRAPH_COUNT);
+      isTruncated = true;
+    }
+
+    if (isTruncated) {
+      setError(t('common.error_article_truncated'));
+    } else if (tooShort) {
+      // Show info message if some segments were filtered out
+      // (Using error state for simplicity as there's no info state yet)
+      setError(t('common.error_segment_too_short'));
+    }
+
+    const initialParagraphs = finalChunks.map((text) => ({
       id: crypto.randomUUID(),
       text,
       status: 'idle',
@@ -571,8 +615,33 @@ Output ONLY the prompt, no explanation.
             <div className="animate-in fade-in slide-in-from-right-4 duration-700">
               <div className="flex items-center justify-between mb-6 px-2">
                 <h2 className="text-[10px] font-bold text-text/40 uppercase tracking-[0.2em]">{t('common.segments')}</h2>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-text/20 uppercase tracking-widest">
-                  {paragraphs.length} {t('common.segments').toLowerCase()}
+                <div className="flex items-center gap-2">
+                  {hasCompletedImages && (
+                    <>
+                      <button
+                        onClick={() => setShowCombinedPreview(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        {t('common.preview_article')}
+                      </button>
+                      <button
+                        onClick={handlePackageDownload}
+                        disabled={isPackaging}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all disabled:opacity-50"
+                      >
+                        {isPackaging ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Package className="w-3.5 h-3.5" />
+                        )}
+                        {isPackaging ? t('common.package_preparing') : t('common.download_package')}
+                      </button>
+                    </>
+                  )}
+                  <span className="text-[10px] font-bold text-text/20 uppercase tracking-widest ml-2">
+                    {paragraphs.length} {t('common.segments').toLowerCase()}
+                  </span>
                 </div>
               </div>
 
@@ -603,6 +672,15 @@ Output ONLY the prompt, no explanation.
           )}
         </div>
       </div>
+
+      {/* Combined Article Preview Modal */}
+      {showCombinedPreview && (
+        <CombinedPreview
+          paragraphs={paragraphs}
+          title={articleTitle}
+          onClose={() => setShowCombinedPreview(false)}
+        />
+      )}
 
       {/* Large Image Preview Modal */}
       {previewImage && (

@@ -26,7 +26,17 @@ const normalizeUsage = (payload) => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [apiKey, setApiKey] = useState(sessionStorage.getItem('pollen_key'));
+  const [apiKey, setApiKey] = useState(() => {
+    const storedKey = sessionStorage.getItem('pollen_key');
+    if (storedKey) return storedKey;
+    
+    // In development, fallback to the token from .env if available
+    if (import.meta.env.DEV && import.meta.env.VITE_DEV_TOKEN) {
+      return import.meta.env.VITE_DEV_TOKEN;
+    }
+    
+    return null;
+  });
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(null);
   const [usageDaily, setUsageDaily] = useState([]);
