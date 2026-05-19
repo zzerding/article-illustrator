@@ -60,6 +60,8 @@
     "image_prompt": "图片提示词",
     "article_text": "文章正文",
     "segments": "文本分段",
+    "search_models": "搜索模型...",
+    "no_models_found": "未找到匹配模型",
     "preview_article": "预览文章",
     "download_package": "打包下载",
     "combined_preview_title": "文章预览",

@@ -60,6 +60,8 @@
     "image_prompt": "Image Prompt",
     "article_text": "Article Text",
     "segments": "Segments",
+    "search_models": "Search models...",
+    "no_models_found": "No models found",
     "preview_article": "Preview Article",
     "download_package": "Download Package",
     "combined_preview_title": "Article Preview",

@@ -337,7 +337,7 @@ Output ONLY the prompt, no explanation.
     }
   };
 
-  const generateImageForParagraph = async (id, customPrompt = null) => {
+  const generateImageForParagraph = async (id, customPrompt = null, customSeed = null) => {
     const targetParagraph = paragraphs.find(p => p.id === id);
     if (!targetParagraph) return;
 
@@ -349,6 +349,9 @@ Output ONLY the prompt, no explanation.
     }
 
     const imageSettings = readImageGenerationSettings();
+    if (customSeed !== null && customSeed !== undefined && String(customSeed).trim() !== '') {
+      imageSettings.seed = Number(customSeed);
+    }
 
     setParagraphs(prev => prev.map(p =>
       p.id === id ? {

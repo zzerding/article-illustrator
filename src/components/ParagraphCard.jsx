@@ -1,4 +1,4 @@
-import { Download, RotateCcw, Trash2, Loader2, Send, Edit3, Image as ImageIcon, Maximize2 } from 'lucide-react';
+import { Download, RotateCcw, Trash2, Loader2, Send, Edit3, Image as ImageIcon, Maximize2, Hash, Shuffle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import StyleSelector from './StyleSelector';
 import { useTranslation } from 'react-i18next';
@@ -13,13 +13,24 @@ const getDownloadExtension = (contentType) => {
 const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, onDelete, onPreview, onUpdateText }) => {
   const { t } = useTranslation();
   const [editedPrompt, setEditedPrompt] = useState(paragraph.prompt || '');
+  const [localSeed, setLocalSeed] = useState(paragraph.imageSeed || '');
 
   useEffect(() => {
     setEditedPrompt(paragraph.prompt || '');
   }, [paragraph.prompt]);
 
+  useEffect(() => {
+    if (paragraph.imageSeed !== undefined && paragraph.imageSeed !== null) {
+      setLocalSeed(paragraph.imageSeed);
+    }
+  }, [paragraph.imageSeed]);
+
   const handleTextChange = (e) => {
     onUpdateText(paragraph.id, e.target.value);
+  };
+
+  const handleRandomizeSeed = () => {
+    setLocalSeed(Math.floor(Math.random() * 2147483647));
   };
 
   const isIdle = paragraph.status === 'idle';
@@ -130,24 +141,46 @@ const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, on
                   placeholder={t('common.prompt_placeholder')}
                   className="w-full h-24 bg-transparent border-none outline-none resize-none text-xs text-text/60 leading-relaxed font-medium placeholder:text-text/20 custom-scrollbar"
                 />
-                <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-slate-200/50">
-                  <StyleSelector
-                    onSelect={onGeneratePrompt}
-                    buttonText={
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text/40 hover:text-primary transition-colors">
-                        <RotateCcw className="w-3 h-3" />
-                        {t('common.regenerate_prompt')}
-                      </span>
-                    }
-                  />
-                  <button
-                    onClick={() => onGenerateImage(editedPrompt)}
-                    disabled={!canGenerateImage}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all disabled:opacity-50 shadow-sm"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    {(isCompleted || isError) ? t('common.regenerate_image') : t('common.generate_image')}
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1 gap-1">
+                      <Hash className="w-3 h-3 text-text/30" />
+                      <input
+                        type="number"
+                        value={localSeed}
+                        onChange={(e) => setLocalSeed(e.target.value)}
+                        placeholder="Seed"
+                        className="w-16 bg-transparent border-none outline-none text-[10px] font-bold text-text/60"
+                      />
+                      <button
+                        onClick={handleRandomizeSeed}
+                        className="p-1 hover:text-primary transition-colors"
+                        title="Randomize Seed"
+                      >
+                        <Shuffle className="w-3 h-3 text-text/30 hover:text-primary" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <StyleSelector
+                      onSelect={onGeneratePrompt}
+                      buttonText={
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text/40 hover:text-primary transition-colors">
+                          <RotateCcw className="w-3 h-3" />
+                          {t('common.regenerate_prompt')}
+                        </span>
+                      }
+                    />
+                    <button
+                      onClick={() => onGenerateImage(editedPrompt, localSeed)}
+                      disabled={!canGenerateImage}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all disabled:opacity-50 shadow-sm"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      {(isCompleted || isError) ? t('common.regenerate_image') : t('common.generate_image')}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -232,6 +265,12 @@ const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, on
                       <span>I: {paragraph.imageModel}</span>
                       <span className="opacity-50">·</span>
                       <span>{paragraph.imageWidth}x{paragraph.imageHeight}</span>
+                      {paragraph.imageSeed !== undefined && (
+                        <>
+                          <span className="opacity-50">·</span>
+                          <span>S: {paragraph.imageSeed}</span>
+                        </>
+                      )}
                     </div>
                     <button
                       onClick={handleDownload}
