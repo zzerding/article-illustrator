@@ -12,7 +12,7 @@ An AI-powered article illustration tool built with React and deployed on Cloudfl
 - **Reference Images** — Upload reference images to guide generation
 - **i18n Support** — Internationalized UI with language detection
 - **OAuth Authentication** — Secure login via [Pollinations Auth](https://enter.pollinations.ai)
-- **Usage Dashboard** — Track daily usage and account balance
+- **Account Status** — Track account balance and profile information
 
 ## Tech Stack
 
@@ -90,7 +90,7 @@ This project uses the [Pollinations.ai](https://pollinations.ai) API for:
 - **Chat Completions**: `/v1/chat/completions` for prompt enhancement
 - **Model Discovery**: `/v1/models` and `/image/models`
 - **Media Upload**: `media.pollinations.ai/upload` for reference images
-- **Account Management**: Profile, balance, and usage tracking
+- **Account Management**: Profile and balance tracking
 
 ## License
 

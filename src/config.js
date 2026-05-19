@@ -11,7 +11,6 @@ export const CONFIG = {
   AUTH_URL: "https://enter.pollinations.ai/authorize",
   PROFILE_API: "https://gen.pollinations.ai/account/profile",
   BALANCE_API: "https://gen.pollinations.ai/account/balance",
-  USAGE_DAILY_API: "https://gen.pollinations.ai/account/usage/daily?format=json&days=90&granularity=day&period=&api_key_ids=",
   MODELS_API: "https://gen.pollinations.ai/v1/models",
   CHAT_COMPLETIONS_API: "https://gen.pollinations.ai/v1/chat/completions",
   IMAGE_GENERATIONS_API: "https://gen.pollinations.ai/v1/images/generations",

@@ -18,13 +18,6 @@ const normalizeBalance = (payload) => {
   return null;
 };
 
-const normalizeUsage = (payload) => {
-  const usage = Array.isArray(payload?.usage) ? payload.usage : [];
-  const count = Number.isFinite(Number(payload?.count)) ? Number(payload.count) : usage.length;
-
-  return { usage, count };
-};
-
 export const AuthProvider = ({ children }) => {
   const [apiKey, setApiKey] = useState(() => {
     const storedKey = sessionStorage.getItem('pollen_key');
@@ -39,27 +32,14 @@ export const AuthProvider = ({ children }) => {
   });
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(null);
-  const [usageDaily, setUsageDaily] = useState([]);
-  const [usageCount, setUsageCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [accountError, setAccountError] = useState(null);
-
-  const usageSummary = useMemo(() => {
-    return usageDaily.reduce((summary, row) => {
-      return {
-        requests: summary.requests + Number(row?.requests || 0),
-        costUsd: summary.costUsd + Number(row?.cost_usd || 0),
-      };
-    }, { requests: 0, costUsd: 0 });
-  }, [usageDaily]);
 
   const logout = useCallback(() => {
     sessionStorage.removeItem('pollen_key');
     setApiKey(null);
     setUser(null);
     setBalance(null);
-    setUsageDaily([]);
-    setUsageCount(0);
   }, []);
 
   const fetchAccountData = useCallback(async (key) => {
@@ -93,21 +73,6 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (e) {
         console.warn('Balance fetch failed', e);
-      }
-
-      // 3. Fetch Daily Usage (Optional, don't block if fails)
-      try {
-        const usageRes = await fetch(CONFIG.USAGE_DAILY_API, {
-          headers: { 'Authorization': `Bearer ${key}` }
-        });
-        if (usageRes.ok) {
-          const usageData = await usageRes.json();
-          const normalized = normalizeUsage(usageData);
-          setUsageDaily(normalized.usage);
-          setUsageCount(normalized.count);
-        }
-      } catch (e) {
-        console.warn('Usage fetch failed', e);
       }
     } catch (e) {
       console.warn('Account data fetch failed', e);
@@ -165,9 +130,6 @@ export const AuthProvider = ({ children }) => {
       apiKey,
       user,
       balance,
-      usageDaily,
-      usageCount,
-      usageSummary,
       login,
       logout,
       isLoading,
