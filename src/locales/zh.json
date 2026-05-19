@@ -58,6 +58,7 @@
     "prompt_ready_status": "提示词已生成",
     "prompt_placeholder": "生成图片前，可先编辑或输入提示词...",
     "image_prompt": "图片提示词",
+    "edit_prompt": "修改提示词",
     "article_text": "文章正文",
     "segments": "文本分段",
     "search_models": "搜索模型...",

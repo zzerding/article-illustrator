@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, HelpCircle, Sparkles, Wand2, Loader2, X, Download, Eye, Package } from 'lucide-react';
+import { AlertCircle, Loader2, X, Download, Sparkles } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
 import CombinedPreview from '../components/CombinedPreview';
 import { useAuth } from '../context/AuthContext';
@@ -146,6 +146,7 @@ const EditorPage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [showCombinedPreview, setShowCombinedPreview] = useState(false);
   const [isPackaging, setIsPackaging] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const articleTitle = paragraphs.length > 0
     ? paragraphs[0].text.replace(/[“”""'']/g, '').slice(0, 60).trim() + (paragraphs[0].text.length > 60 ? '…' : '')
@@ -231,6 +232,9 @@ const EditorPage = () => {
     }));
 
     setParagraphs(initialParagraphs);
+    if (initialParagraphs.length > 0) {
+      setSelectedId(initialParagraphs[0].id);
+    }
     setIsProcessing(false);
   };
 
@@ -298,6 +302,7 @@ Output ONLY the prompt, no explanation.
     const targetParagraph = paragraphs.find(p => p.id === id);
     if (!targetParagraph) return;
 
+    setSelectedId(id);
     const selectedTextModel = localStorage.getItem(STORAGE_KEYS.TEXT_MODEL) || CONFIG.DEFAULT_TEXT_MODEL;
     const imageSettings = readImageGenerationSettings();
 
@@ -341,6 +346,7 @@ Output ONLY the prompt, no explanation.
     const targetParagraph = paragraphs.find(p => p.id === id);
     if (!targetParagraph) return;
 
+    setSelectedId(id);
     const prompt = (customPrompt || targetParagraph.prompt || '').trim();
     if (!prompt) {
       const error = new Error('MISSING_PROMPT');
@@ -423,7 +429,19 @@ Output ONLY the prompt, no explanation.
   };
 
   const handleDelete = (id) => {
-    setParagraphs(prev => prev.filter(p => p.id !== id));
+    setParagraphs(prev => {
+      const nextParagraphs = prev.filter(p => p.id !== id);
+      if (selectedId === id) {
+        if (nextParagraphs.length > 0) {
+          const currentIndex = prev.findIndex(p => p.id === id);
+          const nextIndex = Math.min(currentIndex, nextParagraphs.length - 1);
+          setSelectedId(nextParagraphs[nextIndex].id);
+        } else {
+          setSelectedId(null);
+        }
+      }
+      return nextParagraphs;
+    });
   };
 
   const handleUpdateParagraphText = (id, newText) => {
@@ -442,98 +460,114 @@ Output ONLY the prompt, no explanation.
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-        {/* Left Column: Input (Sticky on Desktop) */}
-        <div className="w-full lg:w-5/12 xl:w-4/12">
-          <div className="lg:sticky lg:top-8 flex flex-col gap-6">
-            <div className="bg-white/70 backdrop-blur-md border border-slate-200 rounded-3xl p-6 shadow-xl shadow-slate-200/50 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
-              <div className="flex flex-col gap-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[10px] font-bold text-text/40 uppercase tracking-[0.2em]">{t('common.article_text')}</h2>
-                  <Sparkles className="w-4 h-4 text-primary/40" />
-                </div>
+      <div className="flex flex-col gap-12">
+        {/* Top: Input Section */}
+        <div className="w-full max-w-5xl mx-auto">
+          <div className="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={articleText}
+                onChange={(e) => setArticleText(e.target.value)}
+                placeholder={t('common.placeholder')}
+                className="w-full h-[200px] lg:h-[250px] bg-transparent border-none outline-none resize-none font-sans text-base text-text/80 leading-relaxed placeholder:text-text/20 custom-scrollbar"
+              />
 
-                <textarea
-                  value={articleText}
-                  onChange={(e) => setArticleText(e.target.value)}
-                  placeholder={t('common.placeholder')}
-                  className="w-full h-[300px] lg:h-[450px] bg-transparent border-none outline-none resize-none font-sans text-base text-text leading-relaxed placeholder:text-text/20 custom-scrollbar"
-                />
-
-                <div className="pt-4 border-t border-slate-100">
-                  <button
-                    onClick={handleParse}
-                    disabled={isProcessing || !articleText.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-hover disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95"
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="w-4 h-4" />
-                    )}
-                    {isProcessing ? t('common.loading') : t('common.parse_button')}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Help/Tip section on desktop */}
-            <div className="hidden lg:flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100">
-              <HelpCircle className="w-5 h-5 text-text/30 shrink-0 mt-0.5" />
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-bold text-text/60 uppercase tracking-wider">How to use</p>
-                <p className="text-xs text-text/40 leading-relaxed">
-                  Paste your article content, choose how many illustrations you want, and hit parse. We will split the text into logical segments for you to illustrate individually.
-                </p>
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={handleParse}
+                  disabled={isProcessing || !articleText.trim()}
+                  className="group relative flex items-center gap-2 text-primary font-bold text-sm disabled:text-slate-300 disabled:cursor-not-allowed transition-all"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>{t('common.parse_button')}</span>
+                  )}
+                  <span className="absolute -bottom-1 left-0 w-full h-px bg-primary scale-x-100 group-hover:scale-x-110 transition-transform origin-right" />
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Results (Scrollable) */}
-        <div className="w-full lg:w-7/12 xl:w-8/12">
+        {/* Bottom: Results Section */}
+        <div className="w-full">
           {paragraphs.length > 0 ? (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700">
-              <div className="flex items-center justify-between mb-6 px-2">
-                <h2 className="text-[10px] font-bold text-text/40 uppercase tracking-[0.2em]">{t('common.segments')}</h2>
-                <div className="flex items-center gap-2">
-                  {hasCompletedImages && (
-                    <>
-                      <button
-                        onClick={() => setShowCombinedPreview(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        {t('common.preview_article')}
-                      </button>
-                      <button
-                        onClick={handlePackageDownload}
-                        disabled={isPackaging}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all disabled:opacity-50"
-                      >
-                        {isPackaging ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Package className="w-3.5 h-3.5" />
-                        )}
-                        {isPackaging ? t('common.package_preparing') : t('common.download_package')}
-                      </button>
-                    </>
-                  )}
-                  <span className="text-[10px] font-bold text-text/20 uppercase tracking-widest ml-2">
-                    {paragraphs.length} {t('common.segments').toLowerCase()}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+              {/* Mobile Actions Bar - Shown only on screens below lg when there are completed images */}
+              {hasCompletedImages && (
+                <div className="lg:hidden flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 animate-in fade-in duration-300">
+                  <span className="text-xs font-bold text-text/60 uppercase tracking-wider">
+                    {t('common.article_actions') || 'Article Actions'}
                   </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowCombinedPreview(true)}
+                      className="text-xs font-bold bg-white text-primary border border-slate-200 rounded-xl px-4 py-2 hover:bg-slate-100 transition-all shadow-sm"
+                    >
+                      {t('common.preview_article')}
+                    </button>
+                    <button
+                      onClick={handlePackageDownload}
+                      disabled={isPackaging}
+                      className="text-xs font-bold bg-primary text-white rounded-xl px-4 py-2 hover:opacity-95 transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {isPackaging ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                          <span>{t('common.package_preparing')}</span>
+                        </>
+                      ) : (
+                        <span>{t('common.download_package')}</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Table Headers - Hidden on mobile, shown on lg screens */}
+              <div className="hidden lg:grid grid-cols-[4fr_6fr] gap-0 mb-4 px-4">
+                <div className="pb-4 pr-8 border-r border-slate-200/60">
+                  <h2 className="text-sm font-bold text-text/60 tracking-wider">
+                    {t('common.paragraph')}
+                  </h2>
+                </div>
+                <div className="pb-4 pl-8 flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-text/60 tracking-wider">
+                    {t('common.illustration')}
+                  </h2>
+                  <div className="flex items-center justify-end gap-4 h-full">
+                    {hasCompletedImages && (
+                      <>
+                        <button
+                          onClick={() => setShowCombinedPreview(true)}
+                          className="text-[10px] font-bold text-primary uppercase tracking-wider hover:opacity-80 transition-all"
+                        >
+                          {t('common.preview_article')}
+                        </button>
+                        <button
+                          onClick={handlePackageDownload}
+                          disabled={isPackaging}
+                          className="text-[10px] font-bold text-primary uppercase tracking-wider hover:opacity-80 transition-all disabled:opacity-50"
+                        >
+                          {isPackaging ? t('common.package_preparing') : t('common.download_package')}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-8">
+              <div className="flex flex-col">
                 {paragraphs.map((p, i) => (
                   <ParagraphCard
                     key={p.id}
                     paragraph={p}
                     index={i}
+                    isSelected={selectedId === p.id}
+                    onSelect={setSelectedId}
                     onGeneratePrompt={(style) => generatePromptForParagraph(p.id, style)}
-                    onGenerateImage={(customPrompt) => generateImageForParagraph(p.id, customPrompt)}
+                    onGenerateImage={(customPrompt, customSeed) => generateImageForParagraph(p.id, customPrompt, customSeed)}
                     onDelete={() => handleDelete(p.id)}
                     onPreview={() => setPreviewImage(p)}
                     onUpdateText={handleUpdateParagraphText}

@@ -58,6 +58,7 @@
     "prompt_ready_status": "Prompt Ready",
     "prompt_placeholder": "Edit or enter a prompt before generating the image...",
     "image_prompt": "Image Prompt",
+    "edit_prompt": "Edit Prompt",
     "article_text": "Article Text",
     "segments": "Segments",
     "search_models": "Search models...",

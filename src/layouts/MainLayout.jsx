@@ -25,17 +25,20 @@ const MainLayout = ({ children, onNavigate, currentView }) => {
 
   const Logo = ({ className = "", compact = false }) => (
     <button
+      type="button"
       onClick={() => {
         onNavigate('main');
         setIsMenuOpen(false);
       }}
-      className={`flex items-center min-w-0 hover:opacity-70 transition-opacity ${className}`}
+      className={`flex items-center min-w-0 gap-3 hover:opacity-80 transition-opacity ${compact ? 'justify-center' : ''} ${className}`}
     >
-      {compact ? (
-        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-          <LayoutPanelLeft className="w-6 h-6 text-primary" />
-        </div>
-      ) : (
+      <img
+        src="/favicon.svg"
+        alt=""
+        aria-hidden="true"
+        className={compact ? 'w-10 h-10 shrink-0' : 'w-10 h-10 sm:w-11 sm:h-11 shrink-0'}
+      />
+      {!compact && (
         <span className="font-serif text-lg sm:text-2xl font-bold tracking-tight text-text truncate">
           Article Illustrator
         </span>

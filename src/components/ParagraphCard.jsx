@@ -1,4 +1,4 @@
-import { Download, RotateCcw, Trash2, Loader2, Send, Edit3, Image as ImageIcon, Maximize2, Hash, Shuffle } from 'lucide-react';
+import { Download, RotateCcw, Trash2, Loader2, Edit3, Maximize2, Hash, Sparkles, AlertCircle, Shuffle, X, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import StyleSelector from './StyleSelector';
 import { useTranslation } from 'react-i18next';
@@ -10,10 +10,11 @@ const getDownloadExtension = (contentType) => {
   return 'png';
 };
 
-const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, onDelete, onPreview, onUpdateText }) => {
+const ParagraphCard = ({ paragraph, index, isSelected, onSelect, onGeneratePrompt, onGenerateImage, onDelete, onPreview, onUpdateText }) => {
   const { t } = useTranslation();
   const [editedPrompt, setEditedPrompt] = useState(paragraph.prompt || '');
   const [localSeed, setLocalSeed] = useState(paragraph.imageSeed || '');
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
 
   useEffect(() => {
     setEditedPrompt(paragraph.prompt || '');
@@ -27,6 +28,18 @@ const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, on
 
   const handleTextChange = (e) => {
     onUpdateText(paragraph.id, e.target.value);
+  };
+
+  const handleFocus = () => {
+    if (onSelect) {
+      onSelect(paragraph.id);
+    }
+  };
+
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(paragraph.id);
+    }
   };
 
   const handleRandomizeSeed = () => {
@@ -58,251 +71,225 @@ const ParagraphCard = ({ paragraph, index, onGeneratePrompt, onGenerateImage, on
     }
   };
 
+  const handleGenerateImage = () => {
+    onGenerateImage(editedPrompt, localSeed);
+    setIsEditingPrompt(false);
+  };
+
+  const SeedInput = ({ className }) => (
+    <div className={`flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1 gap-1 ${className}`}>
+      <Hash className="w-3 h-3 text-text/30" />
+      <input
+        type="number"
+        value={localSeed}
+        onChange={(e) => setLocalSeed(e.target.value)}
+        placeholder="Seed"
+        className="w-16 bg-transparent border-none outline-none text-[10px] font-bold text-text/60"
+      />
+      <button
+        onClick={handleRandomizeSeed}
+        className="p-1 hover:text-primary transition-colors"
+        title="Randomize Seed"
+      >
+        <Shuffle className="w-3 h-3 text-text/30 hover:text-primary" />
+      </button>
+    </div>
+  );
+
   return (
-    <div className="group relative bg-white border border-slate-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60 hover:border-primary/20">
-      <div className="flex flex-col gap-6">
-        {/* Header with Index and Delete */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl font-serif text-primary/20 italic">{(index + 1).toString().padStart(2, '0')}</span>
-            <div className="h-px w-8 bg-slate-100" />
-          </div>
-          <button
-            onClick={onDelete}
-            className="p-2 text-text/10 hover:text-red-400 hover:bg-red-50 rounded-xl transition-all"
-            title={t('common.delete_paragraph')}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+    <div
+      onClick={handleClick}
+      className={`relative flex flex-col lg:grid lg:grid-cols-[4fr_6fr] lg:gap-0 border-t border-slate-200/50 first:border-t-0 pt-6 first:pt-0 lg:pt-0 lg:border-t-0 pb-8 lg:pb-12 transition-all duration-300 cursor-pointer ${isSelected ? 'bg-white' : 'hover:bg-slate-50/20'}`}
+    >
+      {/* Left Column: Text Content */}
+      <div className="flex gap-4 lg:gap-6 px-4 lg:px-0 lg:pr-8 lg:border-t lg:border-r lg:border-slate-200/60 lg:pt-8 relative">
+        {/* Selected Indicator Bar */}
+        {isSelected && (
+          <div className="absolute left-4 lg:-left-2 top-6 lg:top-0  bottom-32 w-[3px] bg-primary rounded-full animate-in fade-in slide-in-from-left-2 duration-300" />
+        )}
+        <span className="text-lg font-serif text-text/20 italic select-none min-w-[1.5rem] pt-1">
+          {(index + 1).toString().padStart(2, '0')}
+        </span>
+        <div className="flex flex-col gap-4 flex-1">
+          <textarea
+            value={paragraph.text}
+            onChange={handleTextChange}
+            onFocus={handleFocus}
+            className="w-full bg-transparent border-none outline-none resize-none text-sm text-text/70 leading-relaxed font-sans focus:text-text transition-colors custom-scrollbar py-1"
+            rows={Math.max(3, Math.ceil(paragraph.text.length / 30))}
+            placeholder={t('common.placeholder')}
+          />
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Left Column: The Source (Text & Prompts) */}
-          <div className="flex flex-col gap-4">
-            <div className="relative group/text">
-              <textarea
-                value={paragraph.text}
-                onChange={handleTextChange}
-                className="w-full bg-transparent border-none outline-none resize-none text-xs text-text/70 leading-relaxed font-sans focus:text-text transition-colors custom-scrollbar"
-                rows={Math.max(2, Math.ceil(paragraph.text.length / 40))}
-                placeholder={t('common.placeholder')}
-              />
-              <div className="absolute -right-1 -top-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
-                <Edit3 className="w-3 h-3 text-text/20" />
-              </div>
-            </div>
+      {/* Right Column: Work Area & Actions */}
+      <div className="flex flex-col xl:flex-row gap-6 xl:items-start w-full px-4 lg:px-0 lg:pl-8 lg:border-t lg:border-slate-200/60 lg:pt-8">
 
-            {/* Prompt Generation Control */}
-            {(isIdle || (isError && !hasPrompt)) && (
-              <div className="mt-4 p-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 transition-all hover:border-primary/20 hover:bg-slate-50">
-                <StyleSelector
-                  onSelect={onGeneratePrompt}
-                  buttonText={
-                    <div className="flex flex-col items-center gap-3 w-full">
-                      <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center">
-                        <Edit3 className="w-5 h-5 text-primary" />
-                      </div>
-                      <span className="text-sm font-bold text-primary">{t('common.generate_prompt')}</span>
-                    </div>
-                  }
-                  className="w-full"
-                />
-              </div>
-            )}
-
-            {/* Prompt Generation Loading State */}
-            {isPrompting && (
-              <div className="mt-4 p-8 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-4 animate-pulse">
-                <div className="relative">
-                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                  <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse" />
-                </div>
-                <div className="flex flex-col items-center gap-1.5 text-center">
-                  <span className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">{t('common.generating_prompt_status')}</span>
-                  <div className="flex items-center gap-2 text-[8px] font-bold text-text/20 uppercase tracking-wider">
-                    <span>{localStorage.getItem(STORAGE_KEYS.TEXT_MODEL) || CONFIG.DEFAULT_TEXT_MODEL}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Editable Prompt Section */}
-            {hasPrompt && (
-              <div className="mt-4 flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group/prompt">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-text/40 uppercase tracking-widest">
-                    <Edit3 className="w-3 h-3" />
-                    {t('common.image_prompt')}
-                  </div>
-                </div>
-                <textarea
-                  value={editedPrompt}
-                  onChange={(e) => setEditedPrompt(e.target.value)}
-                  placeholder={t('common.prompt_placeholder')}
-                  className="w-full h-24 bg-transparent border-none outline-none resize-none text-xs text-text/60 leading-relaxed font-medium placeholder:text-text/20 custom-scrollbar"
-                />
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1 gap-1">
-                      <Hash className="w-3 h-3 text-text/30" />
-                      <input
-                        type="number"
-                        value={localSeed}
-                        onChange={(e) => setLocalSeed(e.target.value)}
-                        placeholder="Seed"
-                        className="w-16 bg-transparent border-none outline-none text-[10px] font-bold text-text/60"
-                      />
-                      <button
-                        onClick={handleRandomizeSeed}
-                        className="p-1 hover:text-primary transition-colors"
-                        title="Randomize Seed"
-                      >
-                        <Shuffle className="w-3 h-3 text-text/30 hover:text-primary" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <StyleSelector
-                      onSelect={onGeneratePrompt}
-                      buttonText={
-                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text/40 hover:text-primary transition-colors">
-                          <RotateCcw className="w-3 h-3" />
-                          {t('common.regenerate_prompt')}
-                        </span>
-                      }
-                    />
-                    <button
-                      onClick={() => onGenerateImage(editedPrompt, localSeed)}
-                      disabled={!canGenerateImage}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all disabled:opacity-50 shadow-sm"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      {(isCompleted || isError) ? t('common.regenerate_image') : t('common.generate_image')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: The Canvas (Image & Visual Status) */}
-          <div className="flex flex-col gap-4 min-h-[250px]">
-            {/* Placeholder / Awaiting Action */}
-            {(isIdle || isPrompting || isPrompted) && (
-              <div className="h-full min-h-[250px] flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 p-8 transition-all">
-                <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4">
-                  <ImageIcon className="w-6 h-6 text-slate-200" />
-                </div>
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <span className="text-[10px] font-bold text-text/20 tracking-[0.2em] uppercase">
-                    {isPrompting ? t('common.generating_prompt_status') : isPrompted ? t('common.prompt_ready_status') : t('common.illustration')}
-                  </span>
-                  {isPrompted && (
-                    <p className="text-[10px] text-text/20 max-w-[200px]">
-                      {t('common.prompt_placeholder')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Generating Image Pulse */}
+        {/* Work Area (Image/Prompt) */}
+        <div className="flex-1 flex items-center min-h-[160px] w-full">
+          <div className="w-full">
+            {/* Skeleton Loader for Generating State */}
             {isGenerating && (
-              <div className="aspect-[16/9] bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-4 animate-pulse border border-slate-100 min-h-[250px]">
-                <div className="relative">
-                  <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                  <div className="absolute inset-0 blur-2xl bg-primary/30 animate-pulse" />
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">{t('common.generating_status')}</span>
-                  <div className="flex items-center gap-2 text-[8px] font-bold text-text/20 uppercase tracking-wider">
-                    <span>{localStorage.getItem(STORAGE_KEYS.IMAGE_MODEL) || CONFIG.DEFAULT_IMAGE_MODEL}</span>
+              <div className="flex gap-8 animate-pulse w-full items-center bg-[#F6F6F4]/60 border border-[#EDEDEB]/50 p-6 rounded-2xl min-h-[140px]">
+                {/* Left skeleton: circle + lines */}
+                <div className="flex-1 flex flex-col gap-3.5 py-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-9 h-9 rounded-full bg-slate-200/70" />
+                    <div className="h-2 bg-slate-200/60 rounded-full w-7/12" />
                   </div>
+                  <div className="h-2 bg-slate-200/40 rounded-full w-11/12" />
+                  <div className="h-2 bg-slate-200/40 rounded-full w-8/12" />
+                  <div className="h-2 bg-slate-200/40 rounded-full w-10/12" />
                 </div>
+                {/* Right skeleton: image rectangle */}
+                <div className="w-[180px] sm:w-[240px] h-[100px] bg-slate-200/60 rounded-xl shrink-0" />
               </div>
             )}
 
-            {/* Completed Image */}
-            {isCompleted && (
-              <div className="flex flex-col gap-4 group/img animate-in fade-in duration-500">
-                <div
-                  className="relative aspect-[16/9] rounded-2xl overflow-hidden shadow-xl shadow-slate-200 group-hover:shadow-2xl group-hover:shadow-primary/10 transition-all duration-500 ring-1 ring-black/5 cursor-zoom-in"
-                  onClick={onPreview}
-                >
-                  <img
-                    src={paragraph.imageUrl}
-                    alt="Generated illustration"
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4 gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPreview();
-                      }}
-                      className="p-3 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white hover:text-primary transition-all shadow-lg"
-                      title={t('common.preview')}
-                    >
-                      <Maximize2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload();
-                      }}
-                      className="p-3 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white hover:text-primary transition-all shadow-lg"
-                      title={t('common.download')}
-                    >
-                      <Download className="w-5 h-5" />
-                    </button>
+            {/* Prompt Editor View (When Prompted or Editing) */}
+            {((isPrompted && !isCompleted && !isGenerating) || isEditingPrompt || isPrompting) && (
+              <div className="w-full bg-white border border-slate-100 rounded-xl p-4 shadow-sm animate-in fade-in zoom-in-95 duration-300">
+                {isPrompting ? (
+                  <div className="flex flex-col items-center justify-center py-8 gap-3">
+                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <span className="text-[10px] font-bold text-primary tracking-widest uppercase">{t('common.generating_prompt_status')}</span>
                   </div>
-                </div>
-
-                {paragraph.imageModel && (
-                  <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2 text-[8px] font-bold text-text/20 uppercase tracking-[0.2em]">
-                      <span>I: {paragraph.imageModel}</span>
-                      <span className="opacity-50">·</span>
-                      <span>{paragraph.imageWidth}x{paragraph.imageHeight}</span>
-                      {paragraph.imageSeed !== undefined && (
-                        <>
-                          <span className="opacity-50">·</span>
-                          <span>S: {paragraph.imageSeed}</span>
-                        </>
-                      )}
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-text/30 uppercase tracking-widest">
+                      <span>{t('common.image_prompt')}</span>
+                      <StyleSelector
+                        onSelect={onGeneratePrompt}
+                        buttonText={<span className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1"><RotateCcw className="w-2.5 h-2.5" />{t('common.regenerate_prompt')}</span>}
+                      />
                     </div>
-                    <button
-                      onClick={handleDownload}
-                      className="flex items-center gap-1.5 text-[10px] font-bold text-text/40 hover:text-primary transition-colors uppercase tracking-widest"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      {t('common.download')}
-                    </button>
+                    <textarea
+                      value={editedPrompt}
+                      onChange={(e) => setEditedPrompt(e.target.value)}
+                      className="w-full h-20 bg-transparent border-none outline-none resize-none text-xs text-text/60 leading-relaxed font-medium custom-scrollbar"
+                      placeholder={t('common.prompt_placeholder')}
+                    />
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                      <SeedInput />
+                      <div className="flex items-center gap-2">
+                        {isCompleted && (
+                          <button
+                            onClick={() => setIsEditingPrompt(false)}
+                            className="p-1.5 text-text/40 hover:text-text/60 transition-colors"
+                            title={t('common.close')}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={handleGenerateImage}
+                          disabled={!canGenerateImage}
+                          className="px-4 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-30 transition-all shadow-sm"
+                        >
+                          {isCompleted ? t('common.regenerate_image') : t('common.generate_image')}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Error State (During Image Generation) */}
-            {isError && hasPrompt && (
-              <div className="aspect-[16/9] bg-red-50 rounded-2xl flex flex-col items-center justify-center gap-4 border border-red-100 p-8 min-h-[250px]">
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-500">
-                  <RotateCcw className="w-5 h-5" />
-                </div>
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase">{t('common.error_failed_generation')}</span>
-                  <button
-                    onClick={() => onGenerateImage(editedPrompt)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-red-100 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-200 transition-all"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    {t('common.retry')}
-                  </button>
+            {/* Idle State */}
+            {isIdle && (
+              <div className="w-full flex items-center py-4">
+                <StyleSelector
+                  onSelect={onGeneratePrompt}
+                  buttonText={
+                    <button className="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-widest hover:scale-105 transition-transform">
+                      <Sparkles className="w-4 h-4" />
+                      {t('common.generate_prompt')}
+                    </button>
+                  }
+                />
+              </div>
+            )}
+
+            {/* Completed State (Image View) */}
+            {isCompleted && !isEditingPrompt && !isGenerating && (
+              <div className="w-full animate-in fade-in slide-in-from-left-4 duration-500">
+                <div
+                  className="relative h-[160px] lg:h-[200px] w-full rounded-xl overflow-hidden shadow-sm group/img cursor-zoom-in border border-slate-100 bg-slate-50"
+                  onClick={onPreview}
+                >
+                  <img src={paragraph.imageUrl} alt="Result" className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110" />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                    <Maximize2 className="w-6 h-6 text-white" />
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Error State */}
+            {isError && !isEditingPrompt && (
+              <div className="w-full flex flex-col items-start py-4 gap-3 text-red-400">
+                <AlertCircle className="w-6 h-6" />
+                <button onClick={() => setIsEditingPrompt(true)} className="text-[10px] font-bold uppercase tracking-widest hover:underline">
+                  {t('common.retry')} / {t('common.edit_prompt')}
+                </button>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Action Stack */}
+        <div className="flex flex-col gap-4 items-start shrink-0 min-w-[140px] w-full sm:w-auto mt-4 sm:mt-0">
+          {isGenerating ? (
+            <div className="flex items-center gap-2 text-xs font-semibold text-primary tracking-wider mt-1 animate-pulse">
+              <span>{t('common.generating_status')}</span>
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            </div>
+          ) : isCompleted && !isEditingPrompt ? (
+            <>
+              {/* Status */}
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#E8622A] tracking-wider mb-1">
+                <span>{t('common.generated_status')}</span>
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+              </div>
+
+              {/* Actions List */}
+              <div className="flex flex-wrap sm:flex-col gap-x-4 gap-y-2.5 sm:gap-3.5 items-center sm:items-start w-full">
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 text-xs font-bold text-text/40 hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{t('common.download')}</span>
+                </button>
+
+                <button
+                  onClick={() => onGenerateImage(editedPrompt, localSeed)}
+                  className="flex items-center gap-2 text-xs font-bold text-text/40 hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{t('common.regenerate_image')}</span>
+                </button>
+
+                <button
+                  onClick={() => setIsEditingPrompt(true)}
+                  className="flex items-center gap-2 text-xs font-bold text-text/40 hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{t('common.edit_prompt')}</span>
+                </button>
+
+                <SeedInput className="mt-1" />
+              </div>
+            </>
+          ) : (
+            <button
+              onClick={onDelete}
+              className="p-2 text-text/10 hover:text-red-400 transition-colors ml-auto sm:ml-0"
+              title={t('common.delete_paragraph')}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
