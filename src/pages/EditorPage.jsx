@@ -487,7 +487,7 @@ Output ONLY the prompt, no explanation.
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-24">
       {error && (
         <div className="mb-8 p-4 bg-red-50 text-red-700 rounded-2xl flex items-center justify-between border border-red-100 shadow-sm animate-in slide-in-from-top-4">
           <div className="flex items-center gap-3">

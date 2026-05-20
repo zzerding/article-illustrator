@@ -1,5 +1,5 @@
 import { Download, RotateCcw, Trash2, Loader2, Edit3, Maximize2, Hash, Sparkles, AlertCircle, Shuffle, X, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import StyleSelector from './StyleSelector';
 import { useTranslation } from 'react-i18next';
 import { CONFIG, STORAGE_KEYS } from '../config';
@@ -15,6 +15,15 @@ const ParagraphCard = ({ paragraph, index, isSelected, onSelect, onGeneratePromp
   const [editedPrompt, setEditedPrompt] = useState(paragraph.prompt || '');
   const [localSeed, setLocalSeed] = useState(paragraph.imageSeed || '');
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
+
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [paragraph.text]);
 
   useEffect(() => {
     setEditedPrompt(paragraph.prompt || '');
@@ -105,18 +114,18 @@ const ParagraphCard = ({ paragraph, index, isSelected, onSelect, onGeneratePromp
       <div className="flex gap-4 lg:gap-6 px-4 lg:px-0 lg:pr-8 lg:border-t lg:border-r lg:border-slate-200/60 lg:pt-8 relative">
         {/* Selected Indicator Bar */}
         {isSelected && (
-          <div className="absolute left-4 lg:-left-2 top-6 lg:top-0  bottom-32 w-[3px] bg-primary rounded-full animate-in fade-in slide-in-from-left-2 duration-300" />
+          <div className="absolute left-4 lg:-left-2 top-6 lg:top-0 bottom-6 w-[3px] bg-primary rounded-full animate-in fade-in slide-in-from-left-2 duration-300" />
         )}
         <span className="text-lg font-serif text-text/20 italic select-none min-w-[1.5rem] pt-1">
           {(index + 1).toString().padStart(2, '0')}
         </span>
         <div className="flex flex-col gap-4 flex-1">
           <textarea
+            ref={textareaRef}
             value={paragraph.text}
             onChange={handleTextChange}
             onFocus={handleFocus}
-            className="w-full bg-transparent border-none outline-none resize-none text-sm text-text/70 leading-relaxed font-sans focus:text-text transition-colors custom-scrollbar py-1"
-            rows={Math.max(3, Math.ceil(paragraph.text.length / 30))}
+            className="w-full bg-transparent border-none outline-none resize-none text-sm text-text/70 leading-relaxed font-sans focus:text-text transition-colors custom-scrollbar py-1 overflow-hidden"
             placeholder={t('common.placeholder')}
           />
         </div>
@@ -212,14 +221,23 @@ const ParagraphCard = ({ paragraph, index, isSelected, onSelect, onGeneratePromp
 
             {/* Completed State (Image View) */}
             {isCompleted && !isEditingPrompt && !isGenerating && (
-              <div className="w-full animate-in fade-in slide-in-from-left-4 duration-500">
+              <div className="w-full animate-in fade-in slide-in-from-left-4 duration-500 flex justify-start">
                 <div
-                  className="relative h-[160px] lg:h-[200px] w-full rounded-xl overflow-hidden shadow-sm group/img cursor-zoom-in border border-slate-100 bg-slate-50"
+                  className="relative w-full max-w-full rounded-xl overflow-hidden shadow-sm group/img cursor-zoom-in border border-slate-100 bg-[#F6F6F4]/50 flex items-center justify-center max-h-[320px]"
+                  style={
+                    paragraph.imageWidth && paragraph.imageHeight
+                      ? { aspectRatio: `${paragraph.imageWidth} / ${paragraph.imageHeight}` }
+                      : { aspectRatio: '1 / 1' }
+                  }
                   onClick={onPreview}
                 >
-                  <img src={paragraph.imageUrl} alt="Result" className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110" />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                    <Maximize2 className="w-6 h-6 text-white" />
+                  <img
+                    src={paragraph.imageUrl}
+                    alt="Result"
+                    className="max-w-full max-h-full object-contain transition-transform duration-700 group-hover/img:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                    <Maximize2 className="w-5 h-5 text-white" />
                   </div>
                 </div>
               </div>

@@ -206,31 +206,33 @@ const MainLayout = ({ children, onNavigate, currentView }) => {
         <header className="lg:hidden h-16 px-4 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-30 border-b border-slate-100">
           <Logo />
           
-          {apiKey && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex items-center transition-all active:scale-95"
-                aria-label="Toggle Menu"
-              >
-                {isMenuOpen ? (
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-text/60 hover:text-primary transition-all">
-                    <X className="w-5 h-5" />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-text/5 bg-slate-50 shrink-0 shadow-sm ring-2 ring-transparent hover:ring-primary/10 transition-all">
-                    {user?.image ? (
-                      <img src={user.image} alt={displayName} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-text/20" />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center transition-all active:scale-95"
+              aria-label="Toggle Menu"
+            >
+              {isMenuOpen ? (
+                <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-text/60 hover:text-primary transition-all">
+                  <X className="w-5 h-5" />
+                </div>
+              ) : apiKey ? (
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-text/5 bg-slate-50 shrink-0 shadow-sm ring-2 ring-transparent hover:ring-primary/10 transition-all">
+                  {user?.image ? (
+                    <img src={user.image} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-text/20" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-text/60 hover:text-primary transition-all">
+                  <Menu className="w-5 h-5" />
+                </div>
+              )}
+            </button>
+          </div>
         </header>
 
         {/* Mobile Menu Drawer */}
@@ -252,21 +254,25 @@ const MainLayout = ({ children, onNavigate, currentView }) => {
               </div>
               
               <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-10">
-                <div>
-                  <h2 className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em] mb-6">
-                    {t('common.account') || 'Account'}
-                  </h2>
-                  <UserMenu isMobile={true} />
-                </div>
+                {apiKey && (
+                  <div>
+                    <h2 className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em] mb-6">
+                      {t('common.account') || 'Account'}
+                    </h2>
+                    <UserMenu isMobile={true} />
+                  </div>
+                )}
 
-                <div className="border-t border-slate-100 pt-8">
-                  <h2 className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em] mb-6">
-                    {t('common.settings')}
-                  </h2>
-                  <ModelSettings inline={true} />
-                </div>
+                {apiKey && (
+                  <div className="border-t border-slate-100 pt-8">
+                    <h2 className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em] mb-6">
+                      {t('common.settings')}
+                    </h2>
+                    <ModelSettings inline={true} />
+                  </div>
+                )}
 
-                <div className="border-t border-slate-100 pt-8">
+                <div className={apiKey ? 'border-t border-slate-100 pt-8' : ''}>
                   <h2 className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em] mb-6">
                     Navigation
                   </h2>
