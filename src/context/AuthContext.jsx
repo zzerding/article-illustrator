@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import { CONFIG } from '../config';
 
 const AuthContext = createContext();
@@ -18,10 +18,28 @@ const normalizeBalance = (payload) => {
   return null;
 };
 
+const encodeKey = (key) => {
+  if (!key) return null;
+  try {
+    return btoa(key);
+  } catch (e) {
+    return key;
+  }
+};
+
+const decodeKey = (encoded) => {
+  if (!encoded) return null;
+  try {
+    return atob(encoded);
+  } catch (e) {
+    return encoded;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [apiKey, setApiKey] = useState(() => {
-    const storedKey = sessionStorage.getItem('pollen_key');
-    if (storedKey) return storedKey;
+    const storedKey = localStorage.getItem('pollen_key');
+    if (storedKey) return decodeKey(storedKey);
     
     // In development, fallback to the token from .env if available
     if (import.meta.env.DEV && import.meta.env.VITE_DEV_TOKEN) {
@@ -36,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   const [accountError, setAccountError] = useState(null);
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem('pollen_key');
+    localStorage.removeItem('pollen_key');
     setApiKey(null);
     setUser(null);
     setBalance(null);
@@ -95,7 +113,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (keyFromHash) {
-        sessionStorage.setItem('pollen_key', keyFromHash);
+        localStorage.setItem('pollen_key', encodeKey(keyFromHash));
         setApiKey(keyFromHash);
         window.history.replaceState(null, '', window.location.pathname);
         // fetchAccountData will be called by the next useEffect run triggered by setApiKey
