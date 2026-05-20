@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import editorDesktop from '../assets/editor-desktop.png';
+import editorDesktop from '../assets/editor-desktop.webp';
 
 const LandingPage = () => {
   const { login } = useAuth();
@@ -45,6 +45,10 @@ const LandingPage = () => {
             src={editorDesktop} 
             alt="Editor Preview" 
             className="w-full h-auto"
+            width="1536"
+            height="1024"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'flex';

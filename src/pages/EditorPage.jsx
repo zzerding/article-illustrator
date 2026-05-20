@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Loader2, X, Download, Sparkles } from 'lucide-react';
 import ParagraphCard from '../components/ParagraphCard';
-import CombinedPreview from '../components/CombinedPreview';
 import { useAuth } from '../context/AuthContext';
 import { CONFIG, STORAGE_KEYS, STYLE_PROMPTS } from '../config';
 import { readImageGenerationSettings } from '../imageSettings';
-import { downloadPackage } from '../utils/packageDownload';
 import { useTranslation } from 'react-i18next';
 
 const MAX_PARAGRAPH_COUNT = 50;
 const PROMPT_GENERATION_MAX_TOKENS = 800;
 const PROMPT_REASONING_EFFORT = 'minimal';
+const CombinedPreview = lazy(() => import('../components/CombinedPreview'));
 
 const getDownloadExtension = (contentType) => {
   if (contentType?.includes('jpeg') || contentType?.includes('jpg')) return 'jpg';
@@ -207,6 +206,7 @@ const EditorPage = () => {
     if (isPackaging) return;
     setIsPackaging(true);
     try {
+      const { downloadPackage } = await import('../utils/packageDownload');
       await downloadPackage(paragraphs, articleTitle);
     } catch (e) {
       console.error('Package download failed', e);
@@ -629,11 +629,19 @@ Output ONLY the prompt, no explanation.
 
       {/* Combined Article Preview Modal */}
       {showCombinedPreview && (
-        <CombinedPreview
-          paragraphs={paragraphs}
-          title={articleTitle}
-          onClose={() => setShowCombinedPreview(false)}
-        />
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-text/90 backdrop-blur-md">
+              <Loader2 className="w-8 h-8 animate-spin text-white" />
+            </div>
+          }
+        >
+          <CombinedPreview
+            paragraphs={paragraphs}
+            title={articleTitle}
+            onClose={() => setShowCombinedPreview(false)}
+          />
+        </Suspense>
       )}
 
       {/* Large Image Preview Modal */}

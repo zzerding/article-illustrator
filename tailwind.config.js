@@ -16,8 +16,8 @@ export default {
         border: '#E5E7EB',
       },
       fontFamily: {
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        sans: ['"Noto Sans SC"', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', 'Georgia', 'Times New Roman', 'serif'],
+        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
       },
     },
   },

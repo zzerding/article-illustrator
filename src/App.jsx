@@ -1,20 +1,23 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
-import EditorPage from './pages/EditorPage';
-import AboutPage from './pages/AboutPage';
+
+const EditorPage = lazy(() => import('./pages/EditorPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+
+const PageLoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  </div>
+);
 
 function AppContent() {
   const { apiKey, isLoading } = useAuth();
   const [view, setView] = useState('main'); // 'main' or 'about'
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageLoadingFallback />;
   }
 
   const navigateTo = (newView) => {
@@ -25,11 +28,15 @@ function AppContent() {
   return (
     <MainLayout onNavigate={(v) => navigateTo(v)} currentView={view}>
       {view === 'about' ? (
-        <AboutPage onBack={() => navigateTo('main')} />
+        <Suspense fallback={<PageLoadingFallback />}>
+          <AboutPage onBack={() => navigateTo('main')} />
+        </Suspense>
       ) : !apiKey ? (
         <LandingPage />
       ) : (
-        <EditorPage />
+        <Suspense fallback={<PageLoadingFallback />}>
+          <EditorPage />
+        </Suspense>
       )}
     </MainLayout>
   );
