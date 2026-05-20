@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Languages, Menu, X, Settings2, ChevronLeft, ChevronRight, LayoutPanelLeft, Info, LogOut } from 'lucide-react';
+import { User, Languages, Menu, X, Settings2, ChevronLeft, ChevronRight, LayoutPanelLeft, Info, LogOut, Github } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import ModelSettings from '../components/ModelSettings';
@@ -117,6 +117,17 @@ const MainLayout = ({ children, onNavigate, currentView }) => {
         <Info className="w-5 h-5 lg:w-4 lg:h-4 shrink-0" />
         {!compact && <span>{t('common.about')}</span>}
       </button>
+
+      <a
+        href="https://github.com/zzerding/article-illustrator"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex items-center gap-2.5 text-sm font-medium transition-opacity ${isMobile ? 'w-full p-4 bg-slate-50 rounded-2xl text-left' : ''} text-text/60 hover:text-text ${compact ? 'justify-center p-3' : ''}`}
+        title="GitHub"
+      >
+        <Github className="w-5 h-5 lg:w-4 lg:h-4 shrink-0" />
+        {!compact && <span>GitHub</span>}
+      </a>
     </div>
   );
 

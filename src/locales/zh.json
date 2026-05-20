@@ -94,6 +94,11 @@
       "privacy": "我们重视您的隐私。您的文章文本和生成的图像均实时处理，绝不会存储在我们的服务器上。应用使用您自己的 Pollinations Pollen，确保您对用量拥有完全控制权。",
       "credits": "本项目由 Pollinations.ai 提供支持，为文本生成和图像合成提供底层 AI 模型。"
     },
+    "github": {
+      "title": "开源项目",
+      "description": "本项目完全开源。欢迎在 GitHub 上浏览代码、提交反馈或共同参与开发。",
+      "link": "GitHub 仓库"
+    },
     "back": "返回应用"
   }
 }

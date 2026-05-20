@@ -94,6 +94,11 @@
       "privacy": "We value your privacy. Your article text and generated images are processed in real-time and never stored on our servers. The app uses your own Pollinations Pollen to ensure you have full control over your usage.",
       "credits": "This project is powered by Pollinations.ai, providing the underlying AI models for both text generation and image synthesis."
     },
+    "github": {
+      "title": "Open Source",
+      "description": "This project is fully open source. Explore the code, report issues, or contribute to its development on GitHub.",
+      "link": "GitHub Repository"
+    },
     "back": "Back to App"
   }
 }

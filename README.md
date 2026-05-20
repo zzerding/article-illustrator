@@ -2,6 +2,8 @@
 
 An AI-powered article illustration tool built with React and deployed on Cloudflare Pages, powered by [Pollinations.ai](https://pollinations.ai).
 
+**Live Preview**: [https://article.240801.xyz/](https://article.240801.xyz/)
+
 ## Features
 
 - **AI Image Generation** — Generate custom illustrations for your articles using multiple AI models via [Pollinations.ai](https://pollinations.ai)

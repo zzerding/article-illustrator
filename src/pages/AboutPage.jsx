@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, Cpu, ShieldCheck, Heart } from 'lucide-react';
+import { ArrowLeft, BookOpen, Cpu, ShieldCheck, Heart, Github } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const AboutPage = ({ onBack }) => {
@@ -59,22 +59,42 @@ const AboutPage = ({ onBack }) => {
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-              <div className="flex items-center gap-2 text-primary">
-                <Cpu className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-widest">Powered By</span>
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-primary">
+                  <Cpu className="w-5 h-5" />
+                  <span className="font-bold text-xs uppercase tracking-widest">Powered By</span>
+                </div>
+                <p className="text-text/70 text-sm italic">
+                  {t('about.privacy_credits.credits')}
+                </p>
+                <a
+                  href="https://pollinations.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs font-bold text-primary hover:underline"
+                >
+                  pollinations.ai →
+                </a>
               </div>
-              <p className="text-text/70 text-sm italic">
-                {t('about.privacy_credits.credits')}
-              </p>
-              <a
-                href="https://pollinations.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block text-xs font-bold text-primary hover:underline"
-              >
-                pollinations.ai →
-              </a>
+
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-primary">
+                  <Github className="w-5 h-5" />
+                  <span className="font-bold text-xs uppercase tracking-widest">{t('about.github.title')}</span>
+                </div>
+                <p className="text-text/70 text-sm italic">
+                  {t('about.github.description')}
+                </p>
+                <a
+                  href="https://github.com/zzerding/article-illustrator"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs font-bold text-primary hover:underline"
+                >
+                  {t('about.github.link')} →
+                </a>
+              </div>
             </div>
           </div>
         </section>
